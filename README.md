@@ -10,7 +10,7 @@ poetry install
 
 ## Dataset
 
-Tested on the [Maritime Visual Tracking Dataset (MVTD)](https://github.com/chenzx/MVTD).
+Tested on the [Maritime Visual Tracking Dataset (MVTD)](https://github.com/AhsanBaidar/MVTD).
 
 Expected folder structure:
 
