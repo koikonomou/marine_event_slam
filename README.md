@@ -27,7 +27,7 @@ Expected folder structure:
 ## Usage
 
 ```bash
-poetry run python marine_event_slam.py --frame /path/to/the/folder 
+poetry run python marine_event_detector.py --frame /path/to/the/folder 
 ```
 ## Stabilizer
 
