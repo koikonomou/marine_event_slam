@@ -29,3 +29,8 @@ Expected folder structure:
 ```bash
 poetry run python marine_event_slam.py --frame /path/to/the/folder 
 ```
+## Stabilizer
+
+```bash
+python3 stabilizer.py -i  ../on-board-frames -o ../out3 -d ../debug3 -w 5 -b -sy 0.3 -dm 1.3
+```
