@@ -3,17 +3,18 @@ name = "marine-event-slam"
 version = "0.1.0"
 description = "Marine event camera SLAM with CV-based obstacle avoidance"
 authors = []
-packages = [{ include = "src" }]
+packages = [{ include = "pose_estimation" }]
 
 [tool.poetry.dependencies]
-python     = "^3.10"
-numpy      = "^2.0"
-scipy      = "^1.13"
+python = "^3.10"
+pandas = "*"
+numpy  = "^2.0"
+scipy  = "^1.13"
 opencv-python = "^4.10"
-matplotlib = "^3.9"
+matplotlib    = "^3.9"
 
 [tool.poetry.scripts]
-marine-slam = "src.main:run_full_system"
+marine-slam = "pose_estimation.runme:main"
 
 [build-system]
 requires      = ["poetry-core"]
