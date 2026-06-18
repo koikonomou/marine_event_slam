@@ -5,14 +5,18 @@ import numpy as np
 
 import cv2
 
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'event_pose_estimation'))
+from event_pose_estimation import pose_estimation
+
 
 imu = pd.read_csv( sys.argv[1] )
 imu.columns = imu.columns.str.replace('"', '').str.strip()
 
-fnames = glob.glob( sys.argv[2] )
+fnames = sorted( glob.glob( sys.argv[2] ) )
 
 
-sync_pairs = []
+prev_mem = {}
+
 for fname in fnames:
 
     ts_str = os.path.splitext(os.path.basename(fname))[0] 
@@ -33,6 +37,7 @@ for fname in fnames:
     print( ts )
     print( imu.loc[idx,'epoch'] )
     print( "---" )
-    #pose, mem = pose_estimation( img, imu, prev_mem )
+    pose, _ = pose_estimation( img, imu.loc[idx], prev_mem, debug=True )
+    print(pose )
 
 
