@@ -1,5 +1,6 @@
 import math
 import os
+import time
 import cv2
 import numpy as np
 
@@ -20,15 +21,14 @@ def pose_estimation(img, imu, prev_mem, debug=False):
             'prev_t': None,
             'lut': None,
             'C': None,
-            # 1. Temporal spike accumulation
             'event_buffer': [],
-            # 2. Time surface
             'time_surface': None,
-            # loop closure
-            'keyframes': [],
-            'last_kf_t': None,
-            # debug
             'debug_trail': [],
+            'ref_lat': None,
+            'ref_lon': None,
+            'gps_proj': None,   # pyproj Transformer (lat/lon → UTM)
+            'ref_e':   None,    # UTM easting of origin
+            'ref_n':   None,    # UTM northing of origin
         })
 
     if prev_mem['lut'] is None:
@@ -52,7 +52,8 @@ def pose_estimation(img, imu, prev_mem, debug=False):
     g  = cv2.GaussianBlur(img[:, :, 1], (0, 0), 1.5)
     lc = cv2.LUT(g, prev_mem['lut'])
 
-    vis_yaw = 0.0   # visual yaw estimate (event-based)
+    vis_yaw = 0.0
+    _t0     = None
 
     if prev_mem['lp'] is not None:
         diff = lc.astype(np.int16) - prev_mem['lp'].astype(np.int16)
@@ -62,6 +63,8 @@ def pose_estimation(img, imu, prev_mem, debug=False):
         on_ch  = ev[:, :, 2]   # ON  events
         off_ch = ev[:, :, 0]   # OFF events
         ev_gray = np.clip(on_ch.astype(np.uint16) + off_ch.astype(np.uint16), 0, 255).astype(np.uint8)
+
+        _t0 = time.perf_counter()
 
         # 1. Temporal spike accumulation
         prev_mem['event_buffer'].append((ev_gray > 0).astype(np.uint8))
@@ -83,52 +86,70 @@ def pose_estimation(img, imu, prev_mem, debug=False):
         ts_norm[prev_mem['time_surface'] == 0] = 0.0
         prev_mem['ts_norm'] = ts_norm
 
-        # 3. Event polarity yaw
-        on_cols  = np.where(on_ch  > 0)[1]
-        off_cols = np.where(off_ch > 0)[1]
-        if len(on_cols) > 20 and len(off_cols) > 20:
-            polarity_dx = float(on_cols.mean() - off_cols.mean())
-            vis_yaw = math.degrees(math.atan2(-polarity_dx, focal_px))
+        # 3. Optical flow yaw — LK feature tracking on log-LUT frames (upper half)
+        #    Upper half = sky + horizon = stable features for yaw, no water noise
+        h_of    = lc.shape[0] // 2
+        mask_of = np.zeros_like(lc); mask_of[:h_of, :] = 255
+        prev_pts = cv2.goodFeaturesToTrack(
+            prev_mem['lp'], maxCorners=80, qualityLevel=0.01,
+            minDistance=10, mask=mask_of)
+        if prev_pts is not None and len(prev_pts) >= 3:
+            curr_pts, status, _ = cv2.calcOpticalFlowPyrLK(
+                prev_mem['lp'], lc, prev_pts, None,
+                winSize=(21, 21), maxLevel=3)
+            good = status.flatten() == 1
+            if good.sum() >= 5:
+                dx = curr_pts[good, 0, 0] - prev_pts[good, 0, 0]
+                vis_yaw = math.degrees(math.atan2(-float(np.median(dx)), focal_px))
+        # Fall back to event polarity if optical flow has too few features
+        if vis_yaw == 0.0 and len(prev_mem['event_buffer']) >= ACC_WINDOW:
+            on_cols  = np.where(on_ch  > 0)[1]
+            off_cols = np.where(off_ch > 0)[1]
+            if len(on_cols) > 20 and len(off_cols) > 20:
+                polarity_dx = float(on_cols.mean() - off_cols.mean())
+                vis_yaw = math.degrees(math.atan2(-polarity_dx, focal_px))
 
-    prev_mem['lp'] = lc
+    prev_mem['lp']     = lc
     prev_mem['prev_t'] = float(epoch)
 
-    # Loop closure
-    h_lc = lc.shape[0]
-    proj = lc[:h_lc // 2, :].astype(np.float32).mean(axis=0)
-    sig = cv2.resize(proj.reshape(1, -1), (64, 1)).flatten()
-    sig -= sig.mean()
-    d_cur = math.sqrt(float((sig * sig).sum())) + 1e-10
-
-    if prev_mem['last_kf_t'] is None or float(epoch) - prev_mem['last_kf_t'] > 30:
-        prev_mem['keyframes'].append({'x': prev_mem['x'], 'y': prev_mem['y'], 'sig': sig.copy(), 't': float(epoch)})
-        prev_mem['last_kf_t'] = float(epoch)
-
-    best_score, best_kf = 0.0, None
-    for kf in prev_mem['keyframes']:
-        if float(epoch) - kf['t'] < 60:
-            continue
-        d_kf  = math.sqrt(float((kf['sig'] * kf['sig']).sum())) + 1e-10
-        score = float((sig * kf['sig']).sum()) / (d_cur * d_kf)
-        if score > best_score:
-            best_score, best_kf = score, kf
-
-    if best_score > 0.92 and best_kf is not None:
-        prev_mem['x'] += 0.10 * (best_kf['x'] - prev_mem['x'])
-        prev_mem['y'] += 0.10 * (best_kf['y'] - prev_mem['y'])
-
-    # Yaw fusion
+    # Yaw — complementary filter: optical flow (primary) + IMU rate + compass anchor
     if prev_mem['yaw'] is None:
         prev_mem['yaw'] = heading
-
-    prev_mem['yaw'] += 0.20 * vis_yaw + 0.80 * yaw_spd * dt
+    prev_mem['yaw'] += 0.60 * vis_yaw + 0.40 * yaw_spd * dt
     prev_mem['yaw'] += 0.05 * (((heading - prev_mem['yaw']) + 180) % 360 - 180)
     prev_mem['yaw'] %= 360.0
 
-    # Position
+    # Position — dead-reckoning with ZUPT
     hr = math.radians(prev_mem['yaw'])
-    prev_mem['x'] += sog_ms * dt * math.sin(hr)
-    prev_mem['y'] += sog_ms * dt * math.cos(hr)
+    if sog_ms > 0.15:
+        prev_mem['x'] += sog_ms * dt * math.sin(hr)
+        prev_mem['y'] += sog_ms * dt * math.cos(hr)
+
+    # GPS correction — only when moving, so moored vessel is never pulled to berth
+    if sog_ms > 0.3:
+        try:
+            from pyproj import Transformer
+            lat = float(imu['lat'])
+            lon = float(imu['lon'])
+            if prev_mem['ref_lat'] is None:
+                prev_mem['ref_lat'] = lat
+                prev_mem['ref_lon'] = lon
+                zone = int((lon + 180) / 6) + 1
+                epsg = 32600 + zone if lat >= 0 else 32700 + zone
+                prev_mem['gps_proj'] = Transformer.from_crs('EPSG:4326', f'EPSG:{epsg}', always_xy=True)
+                prev_mem['ref_e'], prev_mem['ref_n'] = prev_mem['gps_proj'].transform(lon, lat)
+            gps_e, gps_n = prev_mem['gps_proj'].transform(lon, lat)
+            gps_e -= prev_mem['ref_e']
+            gps_n -= prev_mem['ref_n']
+            prev_mem['x'] += 0.10 * (gps_e - prev_mem['x'])
+            prev_mem['y'] += 0.10 * (gps_n - prev_mem['y'])
+        except (KeyError, TypeError, ValueError, Exception):
+            pass
+
+
+
+    if _t0 is not None:
+        prev_mem['proc_ms'] = (time.perf_counter() - _t0) * 1000
 
     pose = {
         'x':     round(prev_mem['x'],   3),
@@ -144,7 +165,7 @@ def pose_estimation(img, imu, prev_mem, debug=False):
             lon = float(imu['lon'])
         except (KeyError, TypeError):
             lat = lon = 0.0
-        prev_mem['debug_trail'].append({'x': pose['x'], 'y': pose['y'], 'lat': lat, 'lon': lon})
+        prev_mem['debug_trail'].append({'x': pose['x'], 'y': pose['y'], 'lat': lat, 'lon': lon, 'yaw': pose['yaw']})
 
         try:
             import geopandas as gpd
@@ -186,11 +207,30 @@ def pose_estimation(img, imu, prev_mem, debug=False):
             ax.set_ylim(min(all_y) - buf, max(all_y) + buf)
             ax.plot(gps_abs_x,  gps_abs_y,  color='green',    lw=1.8, label='GPS')
             ax.plot(pose_abs_x, pose_abs_y, color='steelblue', lw=1.5, ls='--', label='Pose')
-            ctx.add_basemap(ax, crs=utm_crs.to_string(),source=ctx.providers.OpenStreetMap.Mapnik, zoom='auto')
+
+            # arrow at the current vessel position pointing in the current heading direction
+            yaw_now    = math.radians(trail[-1]['yaw'])
+            arrow_len  = buf * 0.1
+            ax.annotate('',
+                xy=(pose_abs_x[-1] + arrow_len * math.sin(yaw_now),
+                    pose_abs_y[-1] + arrow_len * math.cos(yaw_now)),
+                xytext=(pose_abs_x[-1], pose_abs_y[-1]),
+                arrowprops=dict(arrowstyle='->', color='steelblue',
+                                lw=2.5, mutation_scale=18))
+
+            ctx.add_basemap(ax, crs=utm_crs.to_string(),
+                            source=ctx.providers.OpenStreetMap.Mapnik, zoom='auto')
             ax.set_aspect('equal')
             ax.set_xlabel('UTM Easting (m)'); ax.set_ylabel('UTM Northing (m)')
             ax.set_title(f'Trajectory vs GPS — Syros  (final {errors[-1]:.1f} m  mean {sum(errors)/len(errors):.1f} m)')
             ax.legend()
+
+            # camera frame inset — bottom-left corner
+            ax_cam = ax.inset_axes([0.02, 0.02, 0.28, 0.28])
+            ax_cam.imshow(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
+            ax_cam.axis('off')
+            ax_cam.set_title('Camera', fontsize=8, pad=2)
+
             plt.tight_layout()
             out = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'trajectory.png')
             plt.savefig(out, dpi=150)

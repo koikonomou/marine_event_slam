@@ -34,10 +34,11 @@ for fname in fnames:
 
     img = cv2.imread( fname )
 
-    print( ts )
-    print( imu.loc[idx,'epoch'] )
-    print( "---" )
+    #print( ts )
+    #print( imu.loc[idx,'epoch'] )
+    #print( "---" )
     pose, _ = pose_estimation( img, imu.loc[idx], prev_mem, debug=True )
-    print(pose )
+    print( f"frame {fnames.index(fname)+1}/{len(fnames)}  proc={prev_mem.get('proc_ms', 0):.2f}ms  x={pose['x']:+.2f}  y={pose['y']:+.2f}" )
+    #print(pose )
 
 
