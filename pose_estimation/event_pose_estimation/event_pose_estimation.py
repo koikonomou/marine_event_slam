@@ -167,23 +167,38 @@ def pose_estimation(img, imu, prev_mem, debug=False):
             errors  = [math.hypot(px - gx, py - gy)
                        for px, py, gx, gy in zip(pose_xs, pose_ys, gps_xs, gps_ys)]
 
-            fig, axes = plt.subplots(1, 2, figsize=(14, 6))
-            axes[0].plot(gps_xs,  gps_ys,  color='green',    lw=1.8, label='GPS (UTM m)')
-            axes[0].plot(pose_xs, pose_ys, color='steelblue', lw=1.5, ls='--', label='Pose (m)')
-            axes[0].set_aspect('equal'); axes[0].grid(True)
-            axes[0].set_xlabel('East (m)'); axes[0].set_ylabel('North (m)')
-            axes[0].set_title('Trajectory vs GPS'); axes[0].legend()
-            axes[1].plot(errors, color='tomato', lw=1.5)
-            axes[1].axhline(5.0, color='gray', ls=':', lw=1, label='GPS accuracy (~5 m)')
-            axes[1].set_xlabel('Frame'); axes[1].set_ylabel('Error (m)')
-            axes[1].set_title(f'Error — final {errors[-1]:.1f} m  mean {sum(errors)/len(errors):.1f} m')
-            axes[1].legend(); axes[1].grid(True)
+            import contextily as ctx
+
+            utm_crs = gdf_utm.crs
+
+            # absolute UTM coords for GPS and pose (needed for tile fetch)
+            gps_abs_x  = [p.x for p in gdf_utm.geometry]
+            gps_abs_y  = [p.y for p in gdf_utm.geometry]
+            pose_abs_x = [ox + px for px in pose_xs]
+            pose_abs_y = [oy + py for py in pose_ys]
+
+            buf = 50
+            all_x = gps_abs_x + pose_abs_x
+            all_y = gps_abs_y + pose_abs_y
+
+            fig, ax = plt.subplots(figsize=(10, 10))
+            ax.set_xlim(min(all_x) - buf, max(all_x) + buf)
+            ax.set_ylim(min(all_y) - buf, max(all_y) + buf)
+            ax.plot(gps_abs_x,  gps_abs_y,  color='green',    lw=1.8, label='GPS')
+            ax.plot(pose_abs_x, pose_abs_y, color='steelblue', lw=1.5, ls='--', label='Pose')
+            ctx.add_basemap(ax, crs=utm_crs.to_string(),source=ctx.providers.OpenStreetMap.Mapnik, zoom='auto')
+            ax.set_aspect('equal')
+            ax.set_xlabel('UTM Easting (m)'); ax.set_ylabel('UTM Northing (m)')
+            ax.set_title(f'Trajectory vs GPS — Syros  (final {errors[-1]:.1f} m  mean {sum(errors)/len(errors):.1f} m)')
+            ax.legend()
             plt.tight_layout()
             out = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'trajectory.png')
             plt.savefig(out, dpi=150)
             plt.close(fig)
-            print(f'[debug] final={errors[-1]:.1f}m  mean={sum(errors)/len(errors):.1f}m')
+            # print(f'[debug] final={errors[-1]:.1f}m  mean={sum(errors)/len(errors):.1f}m')
         except Exception as e:
             print(f'[debug] plot error: {e}')
 
     return pose, prev_mem
+
+
