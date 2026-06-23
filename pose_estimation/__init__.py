@@ -1,0 +1,15 @@
+
+print( "Loading" )
+
+# IMX708
+HFOV_DEG = 66.0
+VFOV_DEG = 41.0
+
+IMG_SIZE_W = 1280
+IMG_SIZE_H = 720
+
+YAW_TO_PXL = IMG_SIZE_W / HFOV_DEG
+PITCH_TO_PXL = IMG_SIZE_H / VFOV_DEG
+
+
+

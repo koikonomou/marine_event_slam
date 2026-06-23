@@ -5,8 +5,12 @@ import numpy as np
 
 import cv2
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'event_pose_estimation'))
-from event_pose_estimation import pose_estimation
+#sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'event_pose_estimation'))
+#from event_pose_estimation import pose_estimation
+
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'rgb_pose_estimation'))
+from rgb_pose_estimation import pose_estimation
+
 
 def main():
 
