@@ -165,29 +165,216 @@ Stasinos Konstantopoulos (stasinos@konstant.gr)
 
 </section>
 <section>
-<section id="representation" class="title-slide slide level1 center">
-<h1>Representation</h1>
+<section id="optical-flow" class="title-slide slide level1 center">
+<h1>Optical Flow</h1>
 
 </section>
-<section id="slam-pose-pointcloud" class="slide level2">
-<h2>SLAM: Pose, Pointcloud</h2>
-<p>Pose has 6 parameters:</p>
+<section id="motion-can-support-stereoscopy" class="slide level2">
+<h2>Motion can support stereoscopy</h2>
+<p>We don’t really need the two cameras, what we really needed was a way to create a measurable disparity.</p>
 <ul>
-<li><p>Three positional parameters, displacement from starting point</p>
-<ul>
-<li>No prior map defining <span class="math inline">\((0,0,0)\)</span></li>
-</ul></li>
-<li><p>Three angular parameters: <em>yaw</em>, <em>roll</em>, and <em>pitch</em></p></li>
+<li><p>What if we had a moving camera?</p></li>
+<li><p>Then in consequtive frames we can match <em>features</em> and measure <span class="math inline">\(d\)</span></p></li>
 </ul>
-<p>The pointcloud is a set of <span class="math inline">\((X,Y,Z)\)</span> triplets</p>
-</section></section>
-<section>
-<section id="outline-1" class="title-slide slide level1 center">
-<h1>Outline</h1>
-
 </section>
-<section class="slide level2">
-
+<section id="optical-flow-1" class="slide level2">
+<h2>Optical Flow</h2>
+<p><em>Optical Flow</em> is the apparent motion of brightness patterns between frames.</p>
+<ul>
+<li><p><em>Brightness,</em> not full colour, because full colour is more fragile and can appear different for too many reasons</p></li>
+<li><p><em>Patterns,</em> not individual points, because even 3D RGB pixels are not distinctive enough, and scalar brightness pixles even more so</p></li>
+</ul>
+</section>
+<section id="optical-flow-2" class="slide level2">
+<h2>Optical Flow</h2>
+<p>Assumptions:</p>
+<ul>
+<li><p>High framerate: The sampling is dense enough to minimize features coming into/falling out of the FOV, and to have small distances for most features between frames</p></li>
+<li><p>Brightness constancy: A feature maintains its brightness between frames</p></li>
+<li><p>Rigidness: Most features move like their neighbours, as they make up a rigid body</p></li>
+</ul>
+</section>
+<section id="framerate" class="slide level2">
+<h2>Framerate</h2>
+<ul>
+<li><p>The smaller the movement between frames, they more stable the results</p></li>
+<li><p>Some features will appear or disappear, but generally few</p></li>
+<li><p>Any modern camera will satisfy this for any reasonable feature speed</p></li>
+</ul>
+<div class="callout callout-note callout-titled callout-style-default">
+<div class="callout-body">
+<div class="callout-title">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<p><strong>Where is the catch?</strong></p>
+</div>
+<div class="callout-content">
+<ul>
+<li><p>How quickly can the on-board computer process a frame pair, while also navigating and performing all this various tasks?</p></li>
+<li><p>Low processing power approaches will be discussed tomorrow.</p></li>
+</ul>
+</div>
+</div>
+</div>
+</section>
+<section id="brightness" class="slide level2">
+<h2>Brightness</h2>
+<ul>
+<li><p>Constancy is easier to satisfy in brightness space than in RGB space</p></li>
+<li><p>Moving light sources can be a problem, but in your outdoors environment the sun drowns out any other light source and has no perceivable motion between frames</p></li>
+<li><p>To be trully frugal with the CPU, bear in mind that spatial gradients along edges matter, not the accurate representation of the (non-linear) human perception of brightness. <a href="https://www.itu.int/dms_pubrec/itu-r/rec/bt/r-rec-bt.601-7-201103-i!!pdf-e.pdf">ITU Recommendation BT.601-7</a> has low-CPU definition that works well: <span class="math inline">\(I = 0.299 R + 0.587 G + 0.114 R\)</span></p></li>
+</ul>
+<div class="callout callout-note callout-titled callout-style-default">
+<div class="callout-body">
+<div class="callout-title">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<p><strong>Where is the catch?</strong></p>
+</div>
+<div class="callout-content">
+<ul>
+<li>Sun reflecting off a <em>different</em> moving object can suddenly change the brightness of your feature</li>
+</ul>
+</div>
+</div>
+</div>
+</section>
+<section id="rigidness" class="slide level2">
+<h2>Rigidness</h2>
+<ul>
+<li><p>It is the nature of feature recognition algorithms to look for corners and similar characteristic pixel clusters that naturally belong to the same object</p></li>
+<li><p>Non-rigid objects also have corners, but they are generally few.</p></li>
+</ul>
+<div class="callout callout-note callout-titled callout-style-default">
+<div class="callout-body">
+<div class="callout-title">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<p><strong>Where is the catch?</strong></p>
+</div>
+<div class="callout-content">
+<p>Wave foam gives features, so have that in mind if it is windy</p>
+</div>
+</div>
+</div>
+</section>
+<section id="method-overview" class="slide level2">
+<h2>Method overview</h2>
+<ul>
+<li><p>The <em>Sorbel-Feldman operator</em> detects edges</p></li>
+<li><p>The <em>Shi-Tomasi score</em> rates corners for their stability</p></li>
+<li><p>Solving the <em>Optical Flow Equation</em> finds the velocity vector (in pixels) that best explains the change</p></li>
+<li><p>From the velocity vector and the framerate we compute disparity <span class="math inline">\(d\)</span> and plug it into the equation we saw earlier</p></li>
+</ul>
+</section>
+<section id="sorbel-feldman-operator" class="slide level2">
+<h2>Sorbel-Feldman Operator</h2>
+<ul>
+<li><p>Images are discrete objects, not directly differentiable</p></li>
+<li><p>The Sorbel-Feldman is a computationally efficient approximation of the intensity gradients over 3×3 kernels, formulated as <em>integer</em> matmul operations</p></li>
+<li><p>The result is for each pixel, the gradient in each direction</p></li>
+</ul>
+</section>
+<section id="sorbel-feldman-operator-1" class="slide level2 nostretch">
+<h2>Sorbel-Feldman Operator</h2>
+<div style="display: grid; grid-template-columns: 1fr 1fr; grid-gap: 2px">
+<div>
+<div class="quarto-figure quarto-figure-center" style="width: 40%; object-fit: cover;">
+<figure>
+<p><img data-src="sorbel_bikes_gray.jpeg"></p>
+<figcaption>Original</figcaption>
+</figure>
+</div>
+</div>
+<div>
+<div class="quarto-figure quarto-figure-center" style="width: 40%; object-fit: cover;">
+<figure>
+<p><img data-src="sorbel_bikes_magn.jpeg"></p>
+<figcaption>Magnitude</figcaption>
+</figure>
+</div>
+</div>
+<div>
+<div class="quarto-figure quarto-figure-center" style="width: 40%; object-fit: cover;">
+<figure>
+<p><img data-src="sorbel_bikes_horz.jpeg"></p>
+<figcaption>y gradient</figcaption>
+</figure>
+</div>
+</div>
+<div>
+<div class="quarto-figure quarto-figure-center" style="width: 40%; object-fit: cover;">
+<figure>
+<p><img data-src="sorbel_bikes_vert.jpeg"></p>
+<figcaption>x gradient</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>Attribution: <a href="https://en.wikipedia.org/wiki/Sobel_operator">https://en.wikipedia.org/wiki/Sobel_operator</a></p>
+</section>
+<section id="shi-tomasi-score" class="slide level2">
+<h2>Shi-Tomasi Score</h2>
+<ul>
+<li><p>Now we have edges, we will push on to find corners</p></li>
+<li><p>Corners are more stable and more efficient drivers of optical flow</p>
+<ul>
+<li><p>all patches along an edge will look similar, will be near each other, and will be rigid</p></li>
+<li><p>too many candidates to match, too similat to each other</p></li>
+</ul></li>
+<li><p>Corners are just where two edges meet, but:</p>
+<ul>
+<li><p>the Sorbel-Feldman gradients are along the W-H axes, not along the edges</p></li>
+<li><p>we have no reason to believe the world will be nicely aligned to the W-H axes of the image</p></li>
+</ul></li>
+</ul>
+</section>
+<section id="shi-tomasi-score-1" class="slide level2">
+<h2>Shi-Tomasi Score</h2>
+<p><span class="math display">\[
+\text{Structure Tensor } A = \begin{bmatrix}
+\left&lt; I_x^2 \right&gt;  &amp; \left&lt; I_x I_y \right&gt; \\
+\left&lt; I_x I_y \right&gt; &amp; \left&lt; I_y^2 \right&gt;   \\
+\end{bmatrix}
+\]</span></p>
+<p>where <span class="math inline">\(\left&lt;\cdot\right&gt;\)</span> is the Gaussian or other aggregation over the local area.</p>
+<ul>
+<li><p>The Structure Tensor gives us the distribution of gradients in the area.</p></li>
+<li><p>If both eigenvalues are relatively large, we have a corner; if only one is large, we have an edge; if neither we are at a flat surface.</p></li>
+</ul>
+<div class="callout callout-note callout-titled callout-style-default">
+<div class="callout-body">
+<div class="callout-title">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<p><strong>Note</strong></p>
+</div>
+<div class="callout-content">
+<p>We will revisit this to get algebraic confirmation to the intuition that corners are more suitable than edges</p>
+</div>
+</div>
+</div>
+</section>
+<section id="shi-tomasi-score-2" class="slide level2">
+<h2>Shi-Tomasi Score</h2>
+<p>To avoid calculating the eigenvalues, various metrics are used.</p>
+<p>For example:</p>
+<p><span class="math display">\[
+M_c = 2 \frac{\det(A)}{\text{trace}(A)+0.001} = 2 \frac{\lambda_1\lambda_2}{\lambda_1+\lambda_2+0.001}
+\]</span></p>
+<p>will be a larger number if both <span class="math inline">\(\lambda_1,\lambda_2\)</span> are large and is a much more efficient computation than calculating the eigenvalues just to compare them.</p>
+</section>
+<section id="optical-flow-equation" class="slide level2">
+<h2>Optical Flow Equation</h2>
+<p>With distinctive features in place, we are ready to formulate the <em>Optical Flow Equation</em></p>
+<p><span class="math display">\[
+I_x v_x + I_y v_v + I_t = 0
+\]</span></p>
+<p>where finds the velocity vector (in pixels) that best explains the change</p>
 
 
 </section></section>

@@ -154,10 +154,94 @@
     "text": "Outline\n\nWe have covered:\n\nRepresentations\nThe lens camera, stereoscopy\n\nMoving on to:\n\nOptical flow and pose estimation.\nFurther relevant sensors: IMU, GPS\nSensor fusion\nAI-based methods: Neural networks for pose estimation.\n3D map construction."
   },
   {
-    "objectID": "presentation/features.html#slam-pose-pointcloud",
-    "href": "presentation/features.html#slam-pose-pointcloud",
+    "objectID": "presentation/features.html#motion-can-support-stereoscopy",
+    "href": "presentation/features.html#motion-can-support-stereoscopy",
     "title": "USV Pose Estimation and Depth Map Extraction",
-    "section": "SLAM: Pose, Pointcloud",
-    "text": "SLAM: Pose, Pointcloud\nPose has 6 parameters:\n\nThree positional parameters, displacement from starting point\n\nNo prior map defining \\((0,0,0)\\)\n\nThree angular parameters: yaw, roll, and pitch\n\nThe pointcloud is a set of \\((X,Y,Z)\\) triplets"
+    "section": "Motion can support stereoscopy",
+    "text": "Motion can support stereoscopy\nWe don’t really need the two cameras, what we really needed was a way to create a measurable disparity.\n\nWhat if we had a moving camera?\nThen in consequtive frames we can match features and measure \\(d\\)"
+  },
+  {
+    "objectID": "presentation/features.html#optical-flow-1",
+    "href": "presentation/features.html#optical-flow-1",
+    "title": "USV Pose Estimation and Depth Map Extraction",
+    "section": "Optical Flow",
+    "text": "Optical Flow\nOptical Flow is the apparent motion of brightness patterns between frames.\n\nBrightness, not full colour, because full colour is more fragile and can appear different for too many reasons\nPatterns, not individual points, because even 3D RGB pixels are not distinctive enough, and scalar brightness pixles even more so"
+  },
+  {
+    "objectID": "presentation/features.html#optical-flow-2",
+    "href": "presentation/features.html#optical-flow-2",
+    "title": "USV Pose Estimation and Depth Map Extraction",
+    "section": "Optical Flow",
+    "text": "Optical Flow\nAssumptions:\n\nHigh framerate: The sampling is dense enough to minimize features coming into/falling out of the FOV, and to have small distances for most features between frames\nBrightness constancy: A feature maintains its brightness between frames\nRigidness: Most features move like their neighbours, as they make up a rigid body"
+  },
+  {
+    "objectID": "presentation/features.html#framerate",
+    "href": "presentation/features.html#framerate",
+    "title": "USV Pose Estimation and Depth Map Extraction",
+    "section": "Framerate",
+    "text": "Framerate\n\nThe smaller the movement between frames, they more stable the results\nSome features will appear or disappear, but generally few\nAny modern camera will satisfy this for any reasonable feature speed\n\n\n\n\n\n\n\nWhere is the catch?\n\n\n\nHow quickly can the on-board computer process a frame pair, while also navigating and performing all this various tasks?\nLow processing power approaches will be discussed tomorrow."
+  },
+  {
+    "objectID": "presentation/features.html#brightness",
+    "href": "presentation/features.html#brightness",
+    "title": "USV Pose Estimation and Depth Map Extraction",
+    "section": "Brightness",
+    "text": "Brightness\n\nConstancy is easier to satisfy in brightness space than in RGB space\nMoving light sources can be a problem, but in your outdoors environment the sun drowns out any other light source and has no perceivable motion between frames\nTo be trully frugal with the CPU, bear in mind that spatial gradients along edges matter, not the accurate representation of the (non-linear) human perception of brightness. ITU Recommendation BT.601-7 has low-CPU definition that works well: \\(I = 0.299 R + 0.587 G + 0.114 R\\)\n\n\n\n\n\n\n\nWhere is the catch?\n\n\n\nSun reflecting off a different moving object can suddenly change the brightness of your feature"
+  },
+  {
+    "objectID": "presentation/features.html#rigidness",
+    "href": "presentation/features.html#rigidness",
+    "title": "USV Pose Estimation and Depth Map Extraction",
+    "section": "Rigidness",
+    "text": "Rigidness\n\nIt is the nature of feature recognition algorithms to look for corners and similar characteristic pixel clusters that naturally belong to the same object\nNon-rigid objects also have corners, but they are generally few.\n\n\n\n\n\n\n\nWhere is the catch?\n\n\nWave foam gives features, so have that in mind if it is windy"
+  },
+  {
+    "objectID": "presentation/features.html#method-overview",
+    "href": "presentation/features.html#method-overview",
+    "title": "USV Pose Estimation and Depth Map Extraction",
+    "section": "Method overview",
+    "text": "Method overview\n\nThe Sorbel-Feldman operator detects edges\nThe Shi-Tomasi score rates corners for their stability\nSolving the Optical Flow Equation finds the velocity vector (in pixels) that best explains the change\nFrom the velocity vector and the framerate we compute disparity \\(d\\) and plug it into the equation we saw earlier"
+  },
+  {
+    "objectID": "presentation/features.html#sorbel-feldman-operator",
+    "href": "presentation/features.html#sorbel-feldman-operator",
+    "title": "USV Pose Estimation and Depth Map Extraction",
+    "section": "Sorbel-Feldman Operator",
+    "text": "Sorbel-Feldman Operator\n\nImages are discrete objects, not directly differentiable\nThe Sorbel-Feldman is a computationally efficient approximation of the intensity gradients over 3×3 kernels, formulated as integer matmul operations\nThe result is for each pixel, the gradient in each direction"
+  },
+  {
+    "objectID": "presentation/features.html#sorbel-feldman-operator-1",
+    "href": "presentation/features.html#sorbel-feldman-operator-1",
+    "title": "USV Pose Estimation and Depth Map Extraction",
+    "section": "Sorbel-Feldman Operator",
+    "text": "Sorbel-Feldman Operator\n\n\n\n\n\nOriginal\n\n\n\n\n\n\n\nMagnitude\n\n\n\n\n\n\n\ny gradient\n\n\n\n\n\n\n\nx gradient\n\n\n\n\nAttribution: https://en.wikipedia.org/wiki/Sobel_operator"
+  },
+  {
+    "objectID": "presentation/features.html#shi-tomasi-score",
+    "href": "presentation/features.html#shi-tomasi-score",
+    "title": "USV Pose Estimation and Depth Map Extraction",
+    "section": "Shi-Tomasi Score",
+    "text": "Shi-Tomasi Score\n\nNow we have edges, we will push on to find corners\nCorners are more stable and more efficient drivers of optical flow\n\nall patches along an edge will look similar, will be near each other, and will be rigid\ntoo many candidates to match, too similat to each other\n\nCorners are just where two edges meet, but:\n\nthe Sorbel-Feldman gradients are along the W-H axes, not along the edges\nwe have no reason to believe the world will be nicely aligned to the W-H axes of the image"
+  },
+  {
+    "objectID": "presentation/features.html#shi-tomasi-score-1",
+    "href": "presentation/features.html#shi-tomasi-score-1",
+    "title": "USV Pose Estimation and Depth Map Extraction",
+    "section": "Shi-Tomasi Score",
+    "text": "Shi-Tomasi Score\n\\[\n\\text{Structure Tensor } A = \\begin{bmatrix}\n\\left&lt; I_x^2 \\right&gt;  & \\left&lt; I_x I_y \\right&gt; \\\\\n\\left&lt; I_x I_y \\right&gt; & \\left&lt; I_y^2 \\right&gt;   \\\\\n\\end{bmatrix}\n\\]\nwhere \\(\\left&lt;\\cdot\\right&gt;\\) is the Gaussian or other aggregation over the local area.\n\nThe Structure Tensor gives us the distribution of gradients in the area.\nIf both eigenvalues are relatively large, we have a corner; if only one is large, we have an edge; if neither we are at a flat surface.\n\n\n\n\n\n\n\nNote\n\n\nWe will revisit this to get algebraic confirmation to the intuition that corners are more suitable than edges"
+  },
+  {
+    "objectID": "presentation/features.html#shi-tomasi-score-2",
+    "href": "presentation/features.html#shi-tomasi-score-2",
+    "title": "USV Pose Estimation and Depth Map Extraction",
+    "section": "Shi-Tomasi Score",
+    "text": "Shi-Tomasi Score\nTo avoid calculating the eigenvalues, various metrics are used.\nFor example:\n\\[\nM_c = 2 \\frac{\\det(A)}{\\text{trace}(A)+0.001} = 2 \\frac{\\lambda_1\\lambda_2}{\\lambda_1+\\lambda_2+0.001}\n\\]\nwill be a larger number if both \\(\\lambda_1,\\lambda_2\\) are large and is a much more efficient computation than calculating the eigenvalues just to compare them."
+  },
+  {
+    "objectID": "presentation/features.html#optical-flow-equation",
+    "href": "presentation/features.html#optical-flow-equation",
+    "title": "USV Pose Estimation and Depth Map Extraction",
+    "section": "Optical Flow Equation",
+    "text": "Optical Flow Equation\nWith distinctive features in place, we are ready to formulate the Optical Flow Equation\n\\[\nI_x v_x + I_y v_v + I_t = 0\n\\]\nwhere finds the velocity vector (in pixels) that best explains the change"
   }
 ]
