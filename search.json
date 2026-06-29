@@ -1,0 +1,142 @@
+[
+  {
+    "objectID": "rgb_slam.html#what-is-slam",
+    "href": "rgb_slam.html#what-is-slam",
+    "title": "USV Pose Estimation and Depth Map Extraction",
+    "section": "What is SLAM?",
+    "text": "What is SLAM?\nSimultaneous Localization and Mapping (SLAM) is the exploration of an unmapped environment: Build a map as you go, place yourself in the half-built map.\n\n\n\n\n\n\nDoesn’t sound too hard, what’s the catch?\n\n\n\nOdometry drifts, so if a position is re-visited it needs to be ‘snapped’ onto the previous position to avoid distorting the map.\nFor a surface vehicle, ‘odometry’ itself is not obvious."
+  },
+  {
+    "objectID": "rgb_slam.html#what-we-will-cover",
+    "href": "rgb_slam.html#what-we-will-cover",
+    "title": "USV Pose Estimation and Depth Map Extraction",
+    "section": "What we will cover",
+    "text": "What we will cover\n\nRepresentation: Pose, pointcloud, 2D image, depth image\nRelevant sensors and their limitations: Stereoscopic vs. monocular vision, IMU error and drift, GPS error.\nConventional methods: Optical flow and pose estimation. Vision/IMU fusion.\nAI-based methods: Neural networks for pose estimation.\n3D map construction."
+  },
+  {
+    "objectID": "rgb_slam.html#slam-pose-pointcloud",
+    "href": "rgb_slam.html#slam-pose-pointcloud",
+    "title": "USV Pose Estimation and Depth Map Extraction",
+    "section": "SLAM: Pose, Pointcloud",
+    "text": "SLAM: Pose, Pointcloud\nPose has 6 parameters:\n\nThree positional parameters, displacement from starting point\n\nNo prior map defining \\((0,0,0)\\)\n\nThree angular parameters: yaw, roll, and pitch\n\nThe pointcloud is a set of \\((X,Y,Z)\\) triplets\n\nAll voxels (volumetric pixels) that are obstacles\n\n\n\n\n\n\n\nTo SLAM is to know your pose within a pointcloud.\n\n\nWhen localized within such a map, a robot can safely navigate"
+  },
+  {
+    "objectID": "rgb_slam.html#rgb-image",
+    "href": "rgb_slam.html#rgb-image",
+    "title": "USV Pose Estimation and Depth Map Extraction",
+    "section": "RGB Image",
+    "text": "RGB Image\n\nAn image is the 2D projection of the real-world pointcloud.\nTwo pieces of information are lost:\n\nDepth is lost as voxels are projected to an image plane\nDistance is lost as metric coordinates are transformed to relative position in the frame (pixel coordinates)\n\nEven assuming a perfect way to recognize rigid bodies, obstacles, from water, foam, and other navigable space we cannot trivially map pixel coordinates to metric voxel coordinates"
+  },
+  {
+    "objectID": "rgb_slam.html#rgb-d-image",
+    "href": "rgb_slam.html#rgb-d-image",
+    "title": "USV Pose Estimation and Depth Map Extraction",
+    "section": "RGB-D Image",
+    "text": "RGB-D Image\n\nAn RGB image is a 3D data structure, [x,y,c]\nAn RGB-D image, depth image, depth map, is a 4D data structure, [x,y,D,c], where we have established the metric distance D between the light-reflecting object at pixel [x,y] and the camera."
+  },
+  {
+    "objectID": "rgb_slam.html#the-slam-pipeline",
+    "href": "rgb_slam.html#the-slam-pipeline",
+    "title": "USV Pose Estimation and Depth Map Extraction",
+    "section": "The SLAM pipeline",
+    "text": "The SLAM pipeline\n\nA vehicle with a camera is moving around\nAs the vehicle moves, the SLAM pipeline processes each frame in order to:\n\nEstimate the vehicle’s pose relative to the previous frame\nTurn the 2D frame into depth image\nStitch the depth image to the pointcloud, the map\n\nIn the presense of drift and uncertainty:\n\nThe overlapping parts will not match perfectly\nThe pose, the map, or both need small corrections"
+  },
+  {
+    "objectID": "rgb_slam.html#the-lens-camera",
+    "href": "rgb_slam.html#the-lens-camera",
+    "title": "USV Pose Estimation and Depth Map Extraction",
+    "section": "The Lens Camera",
+    "text": "The Lens Camera"
+  },
+  {
+    "objectID": "rgb_slam.html#camera-intrinsics",
+    "href": "rgb_slam.html#camera-intrinsics",
+    "title": "USV Pose Estimation and Depth Map Extraction",
+    "section": "Camera Intrinsics",
+    "text": "Camera Intrinsics\n\n\n\n\\(f\\) and \\(d\\) are physical properties of the camera\nFOV (zoom) is a property of the lens configuration, bounded by \\(\\text{FOV} \\leq 2 \\arctan\\left(\\frac{d}{2f}\\right)\\)"
+  },
+  {
+    "objectID": "rgb_slam.html#camera-intrinsics-practicalities",
+    "href": "rgb_slam.html#camera-intrinsics-practicalities",
+    "title": "USV Pose Estimation and Depth Map Extraction",
+    "section": "Camera Intrinsics: Practicalities",
+    "text": "Camera Intrinsics: Practicalities\n\n\nEstimating intrinsicis from the data is possible, but when known we are better off using it.\nYour camera is the Raspberry Pi Camera Module 3 offering multiple configurations (resolution, standard/wide FOV) with different intrinsics. Look up:\n\nPixel size, resolution, FOV, focal length\nComputer vision application usually express \\(f\\) in terms of pixels, calculating separare \\(f_x\\) and \\(f_y\\) values.\n\n\n\nYour sensor has \\(f = 4.74 \\textrm{mm}\\) and a square pixel (1.4μm × 1.4μm): \\(f_x = f_y = 3386 \\textrm{px}\\)\nIf you do not use a ‘native’ resolution but the images are downscaled, pixel size changes.\nFor a native resoluion 4608×2592, using 1920×1080 means \\(f_x = f_y = 1410 \\textrm{px}\\) since these pixels are much larger."
+  },
+  {
+    "objectID": "rgb_slam.html#camera-intrinsics-matrix",
+    "href": "rgb_slam.html#camera-intrinsics-matrix",
+    "title": "USV Pose Estimation and Depth Map Extraction",
+    "section": "Camera Intrinsics Matrix",
+    "text": "Camera Intrinsics Matrix\nIn computer vision the usual representation is the matrix:\n\\[\nK = \\begin{bmatrix}\nf_x & 0 & c_x \\\\\n0 & f_y & c_y \\\\\n0 & 0 & 1\n\\end{bmatrix}\n\\]\nwhere \\(c_x, c_y\\) are the coordinates of the focal centre: Practically, \\(W/2, H/2\\) since origin is always the bottom-left corner.\n\\(K\\) is a scale and translate transform, which makes sense as a representation of zoom and focal centre."
+  },
+  {
+    "objectID": "rgb_slam.html#from-physical-coordinates-to-pixel-coordinates",
+    "href": "rgb_slam.html#from-physical-coordinates-to-pixel-coordinates",
+    "title": "USV Pose Estimation and Depth Map Extraction",
+    "section": "From physical coordinates to pixel coordinates",
+    "text": "From physical coordinates to pixel coordinates\nFor a point \\(P = [W,H,D]\\) within our FOV, the pixel coordinates \\(w,h\\) will be the vector \\(K P\\), normalized by \\(D\\): \\[\nK P =\nK = \\begin{bmatrix}\nf_x & 0 & c_x \\\\\n0 & f_y & c_y \\\\\n0 & 0 & 1\n\\end{bmatrix}\n\\begin{bmatrix}\nX \\\\\nY \\\\\nD\n\\end{bmatrix}\n= \\begin{bmatrix}\nf_x W + c_x D \\\\\nf_y H + c_y D \\\\\nD\n\\end{bmatrix}\n\\]\nSo that pixel coordinates are \\(w = f_x\\frac{W}{D} + c_x\\) and \\(h = f_y\\frac{H}{D} + c_y\\)"
+  },
+  {
+    "objectID": "rgb_slam.html#inverting-back-to-physical-coordinates",
+    "href": "rgb_slam.html#inverting-back-to-physical-coordinates",
+    "title": "USV Pose Estimation and Depth Map Extraction",
+    "section": "Inverting back to physical coordinates",
+    "text": "Inverting back to physical coordinates\nFrom the system of equations we just derived\n\\[\n\\begin{matrix}\nw = f_x\\frac{W}{D} + c_x \\\\\nh = f_y\\frac{H}{D} + c_y\n\\end{matrix}\n\\]\nwe see algebraically what we intuited earlier: the camera sensor loses depth information and this information cannot be retrieved by any algebraic wizardry.\nWe need to go back to the physical and geometric representation and look for some geometric wizardry."
+  },
+  {
+    "objectID": "rgb_slam.html#stereoscopic-vision",
+    "href": "rgb_slam.html#stereoscopic-vision",
+    "title": "USV Pose Estimation and Depth Map Extraction",
+    "section": "Stereoscopic vision",
+    "text": "Stereoscopic vision\n\n\nWe have lots of angular information, but not enough metric information. We need to somehow ‘ground’ angular positions in the FOV to actual meters.\nA stereo camera is two cameras with an accurately known baseline distance \\(B\\).\nWe have a mechanism for making both cameras focus on the same object.\nFrom calibration, we know the disparity \\(d\\) in pixels between in-focus objects, that is, we know \\(w_L - w_R\\)."
+  },
+  {
+    "objectID": "rgb_slam.html#stereoscopic-vision-1",
+    "href": "rgb_slam.html#stereoscopic-vision-1",
+    "title": "USV Pose Estimation and Depth Map Extraction",
+    "section": "Stereoscopic vision",
+    "text": "Stereoscopic vision\n\n\nThen:\n\\[\n\\begin{matrix}\nW_L/D = (w_L-c_x)/f_x \\\\\nW_R/D = (-w_R+c_x)/f_x \\\\\nB/D = d/f_x \\\\\nD = f_x\\frac{B}{d}\n\\end{matrix}\n\\]\nso we can calculate depth from either:\n\nAutofocus and reading the focal length\nIdentifying the same object to measure disparity"
+  },
+  {
+    "objectID": "rgb_slam.html#depth-estimation-in-video",
+    "href": "rgb_slam.html#depth-estimation-in-video",
+    "title": "USV Pose Estimation and Depth Map Extraction",
+    "section": "Depth estimation in video",
+    "text": "Depth estimation in video\nWe don’t really need the two cameras, what we really needed was a way to create a measurable disparity.\nWhat if we had a moving camera?\nThen in subsequent frames we can:\n\nUse knowledge of the movement to measure \\(B\\)\nUse a method to recognize the same object to measure \\(d\\)"
+  },
+  {
+    "objectID": "rgb_slam.html#camera-extrinsics-matrix",
+    "href": "rgb_slam.html#camera-extrinsics-matrix",
+    "title": "USV Pose Estimation and Depth Map Extraction",
+    "section": "Camera Extrinsics Matrix",
+    "text": "Camera Extrinsics Matrix\nThe extrinsics matrix \\([R|T]\\) is the 3×4 matrix that puts together the 3×3 rotation matrix \\(R\\) and the 3×1 translation vector \\(T\\) that give the camera’s pose with respect to an absolute world frame.\nThe computer vision convention for applying and naming the three rotations is:\n\nfirst apply yaw/heading angle \\(\\psi\\)\nthen apply pitch/elevation angle \\(\\phi\\)\nlastly apply roll/bank angle \\(\\theta\\)"
+  },
+  {
+    "objectID": "rgb_slam.html#camera-extrinsics-matrix-1",
+    "href": "rgb_slam.html#camera-extrinsics-matrix-1",
+    "title": "USV Pose Estimation and Depth Map Extraction",
+    "section": "Camera Extrinsics Matrix",
+    "text": "Camera Extrinsics Matrix\nIf you work out the multiplications, you will get:\n\\[\nR = \\begin{bmatrix}\n\\cos\\psi\\cos\\theta &\n   \\cos\\psi\\sin\\theta\\sin\\phi - \\sin\\psi\\cos\\phi &\n   \\text{c}_\\psi \\text{s}_\\theta \\text{c}_\\phi + \\text{s}_\\psi\\text{s}_\\phi \\\\\n\\sin\\psi\\cos\\theta &\n   \\sin\\psi\\sin\\theta\\sin\\phi + \\cos\\psi\\cos\\phi &\n   \\text{s}_\\psi\\text{s}_\\theta\\text{c}_\\phi - \\text{c}_\\psi\\text{s}_\\phi \\\\\n-\\sin\\theta & \\cos\\theta\\sin\\phi & \\text{c}_\\theta\\text{c}_\\phi\n\\end{bmatrix}\n\\]"
+  },
+  {
+    "objectID": "rgb_slam.html#putting-it-all-together",
+    "href": "rgb_slam.html#putting-it-all-together",
+    "title": "USV Pose Estimation and Depth Map Extraction",
+    "section": "Putting it all together",
+    "text": "Putting it all together\nThen the Fundamental Matrix \\(F\\) is:\n\\[\nF = K^{-T}[T]RK^{-1}\n\\]\nwhere \\([T]\\) is the 3×3 skew matrix built from the translation vector \\(T\\):\n\\[\n[T] = \\begin{bmatrix}\n   0 & -t_3 &  t_2 \\\\\nt_3 &    0 & -t_1 \\\\\n-t_2 &  t_1 &    0\n\\end{bmatrix}\n\\]\nThe fundamental matrix is the transformation that tells us how our instrinsics and extrinsics (remember, pose) affect the projection of the actual world onto our sensor."
+  },
+  {
+    "objectID": "rgb_slam.html#putting-it-all-together-1",
+    "href": "rgb_slam.html#putting-it-all-together-1",
+    "title": "USV Pose Estimation and Depth Map Extraction",
+    "section": "Putting it all together",
+    "text": "Putting it all together\nLet us assume we have matched point \\(p_1\\) (pixel coordinates) in one image to point \\(P_2\\) in another image of the same scene. Then it must be true that:\n\\[\np_2^T F p_1 = 0\n\\]\nSo if we can calculate \\(F\\) from sets of matching points, then we can work backwards to calculate our extrinsics."
+  },
+  {
+    "objectID": "rgb_slam.html#time-for-a-short-break",
+    "href": "rgb_slam.html#time-for-a-short-break",
+    "title": "USV Pose Estimation and Depth Map Extraction",
+    "section": "Time for a short break",
+    "text": "Time for a short break\nWe have now transformed the original SLAM problem into the computer vision problem is recognizing the same chunk of the physical world, we shall call it ‘features’, in two images of the same scene."
+  }
+]
