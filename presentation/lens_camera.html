@@ -1,21 +1,21 @@
 <!DOCTYPE html>
 <html lang="en"><head>
-<script src="site_libs/clipboard/clipboard.min.js"></script>
-<script src="site_libs/quarto-html/tabby.min.js"></script>
-<script src="site_libs/quarto-html/popper.min.js"></script>
-<script src="site_libs/quarto-html/tippy.umd.min.js"></script>
-<link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="site_libs/quarto-html/light-border.css" rel="stylesheet">
-<link href="site_libs/quarto-html/quarto-syntax-highlighting-dark-0a6b7249c26820e032cb0bd839ff02b1.css" rel="stylesheet" id="quarto-text-highlighting-styles"><meta charset="utf-8">
+<script src="../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../site_libs/quarto-html/tabby.min.js"></script>
+<script src="../site_libs/quarto-html/popper.min.js"></script>
+<script src="../site_libs/quarto-html/tippy.umd.min.js"></script>
+<link href="../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../site_libs/quarto-html/light-border.css" rel="stylesheet">
+<link href="../site_libs/quarto-html/quarto-syntax-highlighting-dark-0a6b7249c26820e032cb0bd839ff02b1.css" rel="stylesheet" id="quarto-text-highlighting-styles"><meta charset="utf-8">
   <meta name="generator" content="quarto-1.9.38">
 
   <meta name="author" content="Stasinos Konstantopoulos (stasinos@konstant.gr)">
-  <title>USV Pose Estimation and Depth Map Extraction</title>
+  <title>USV SLAM – USV Pose Estimation and Depth Map Extraction</title>
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, minimal-ui">
-  <link rel="stylesheet" href="site_libs/revealjs/dist/reset.css">
-  <link rel="stylesheet" href="site_libs/revealjs/dist/reveal.css">
+  <link rel="stylesheet" href="../site_libs/revealjs/dist/reset.css">
+  <link rel="stylesheet" href="../site_libs/revealjs/dist/reveal.css">
   <style>
     /* Default styles provided by pandoc.
     ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
@@ -32,11 +32,11 @@
       vertical-align: middle;
     }
   </style>
-  <link rel="stylesheet" href="site_libs/revealjs/dist/theme/quarto-4df01d85d5cf19cc6202400f4f043f84.css">
-  <link href="site_libs/revealjs/plugin/quarto-line-highlight/line-highlight.css" rel="stylesheet">
-  <link href="site_libs/revealjs/plugin/reveal-menu/menu.css" rel="stylesheet">
-  <link href="site_libs/revealjs/plugin/reveal-menu/quarto-menu.css" rel="stylesheet">
-  <link href="site_libs/revealjs/plugin/quarto-support/footer.css" rel="stylesheet">
+  <link rel="stylesheet" href="../site_libs/revealjs/dist/theme/quarto-4df01d85d5cf19cc6202400f4f043f84.css">
+  <link href="../site_libs/revealjs/plugin/quarto-line-highlight/line-highlight.css" rel="stylesheet">
+  <link href="../site_libs/revealjs/plugin/reveal-menu/menu.css" rel="stylesheet">
+  <link href="../site_libs/revealjs/plugin/reveal-menu/quarto-menu.css" rel="stylesheet">
+  <link href="../site_libs/revealjs/plugin/quarto-support/footer.css" rel="stylesheet">
   <style type="text/css">
     .reveal div.sourceCode {
       margin: 0;
@@ -361,24 +361,22 @@ B/D = d/f_x \\
 D = f_x\frac{B}{d}
 \end{matrix}
 \]</span></p>
-<p>so we can calculate depth from either:</p>
-<ul>
-<li><p>Autofocus and reading the focal length</p></li>
-<li><p>Identifying the same object to measure disparity</p></li>
-</ul>
+<div class="callout callout-note callout-titled callout-style-default">
+<div class="callout-body">
+<div class="callout-title">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<p><strong>Almost there</strong></p>
+</div>
+<div class="callout-content">
+<p>So if we can measure diparity, we can calculate depth.</p>
+</div>
+</div>
+</div>
 </div><div class="column" style="width:45%;">
 <p><img data-src="stereo.png"></p>
 </div></div>
-</section>
-<section id="depth-estimation-in-video" class="slide level2">
-<h2>Depth estimation in video</h2>
-<p>We don’t really need the two cameras, what we really needed was a way to create a measurable disparity.</p>
-<p>What if we had a moving camera?</p>
-<p>Then in subsequent frames we can:</p>
-<ul>
-<li><p>Use knowledge of the movement to measure <span class="math inline">\(B\)</span></p></li>
-<li><p>Use a method to recognize the same object to measure <span class="math inline">\(d\)</span></p></li>
-</ul>
 </section>
 <section id="camera-extrinsics-matrix" class="slide level2">
 <h2>Camera Extrinsics Matrix</h2>
@@ -404,6 +402,19 @@ R = \begin{bmatrix}
 -\sin\theta &amp; \cos\theta\sin\phi &amp; \text{c}_\theta\text{c}_\phi
 \end{bmatrix}
 \]</span></p>
+<div class="callout callout-note callout-titled callout-style-default">
+<div class="callout-body">
+<div class="callout-title">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<p><strong>Note</strong></p>
+</div>
+<div class="callout-content">
+<p>This looks bad, but is already implemented. It is, nevertheless, often beneficial to have an idea of what is implemented in the libraries you use.</p>
+</div>
+</div>
+</div>
 </section>
 <section id="putting-it-all-together" class="slide level2">
 <h2>Putting it all together</h2>
@@ -423,7 +434,7 @@ t_3 &amp;    0 &amp; -t_1 \\
 </section>
 <section id="putting-it-all-together-1" class="slide level2">
 <h2>Putting it all together</h2>
-<p>Let us assume we have matched point <span class="math inline">\(p_1\)</span> (pixel coordinates) in one image to point <span class="math inline">\(P_2\)</span> in another image of the same scene. Then it <em>must</em> be true that:</p>
+<p>Let us assume we have matched point <span class="math inline">\(p_1\)</span> (pixel coordinates) in one image to point <span class="math inline">\(p_2\)</span> in another image of the same scene. Then it <em>must</em> be true that:</p>
 <p><span class="math display">\[
 p_2^T F p_1 = 0
 \]</span></p>
@@ -431,7 +442,26 @@ p_2^T F p_1 = 0
 </section>
 <section id="time-for-a-short-break" class="slide level2">
 <h2>Time for a short break</h2>
-<p>We have now transformed the original SLAM problem into the computer vision problem is recognizing the same chunk of the physical world, we shall call it ‘features’, in two images of the same scene.</p>
+<p>We have now transformed the original SLAM problem into the computer vision problem of recognizing the same chunk of the physical world in two images of the same scene.</p>
+<ul>
+<li><p>Not single pixels, as a single pixel is not distinctive enough to recognize</p></li>
+<li><p>We shall call these chunks ‘features’</p></li>
+</ul>
+</section></section>
+<section>
+<section id="depth-estimation-in-video" class="title-slide slide level1 center">
+<h1>Depth estimation in video</h1>
+
+</section>
+<section id="depth-estimation-in-video-1" class="slide level2">
+<h2>Depth estimation in video</h2>
+<p>We don’t really need the two cameras, what we really needed was a way to create a measurable disparity.</p>
+<p>What if we had a moving camera?</p>
+<p>Then in subsequent frames we can:</p>
+<ul>
+<li><p>Use knowledge of the movement to measure <span class="math inline">\(B\)</span></p></li>
+<li><p>Use a method to recognize the same object to measure <span class="math inline">\(d\)</span></p></li>
+</ul>
 
 
 </section></section>
@@ -443,19 +473,19 @@ p_2^T F p_1 = 0
 </div></div>
 
   <script>window.backupDefine = window.define; window.define = undefined;</script>
-  <script src="site_libs/revealjs/dist/reveal.js"></script>
+  <script src="../site_libs/revealjs/dist/reveal.js"></script>
   <!-- reveal.js plugins -->
-  <script src="site_libs/revealjs/plugin/quarto-line-highlight/line-highlight.js"></script>
-  <script src="site_libs/revealjs/plugin/pdf-export/pdfexport.js"></script>
-  <script src="site_libs/revealjs/plugin/reveal-menu/menu.js"></script>
-  <script src="site_libs/revealjs/plugin/reveal-menu/quarto-menu.js"></script>
-  <script src="site_libs/revealjs/plugin/quarto-support/support.js"></script>
+  <script src="../site_libs/revealjs/plugin/quarto-line-highlight/line-highlight.js"></script>
+  <script src="../site_libs/revealjs/plugin/pdf-export/pdfexport.js"></script>
+  <script src="../site_libs/revealjs/plugin/reveal-menu/menu.js"></script>
+  <script src="../site_libs/revealjs/plugin/reveal-menu/quarto-menu.js"></script>
+  <script src="../site_libs/revealjs/plugin/quarto-support/support.js"></script>
   
 
-  <script src="site_libs/revealjs/plugin/notes/notes.js"></script>
-  <script src="site_libs/revealjs/plugin/search/search.js"></script>
-  <script src="site_libs/revealjs/plugin/zoom/zoom.js"></script>
-  <script src="site_libs/revealjs/plugin/math/math.js"></script>
+  <script src="../site_libs/revealjs/plugin/notes/notes.js"></script>
+  <script src="../site_libs/revealjs/plugin/search/search.js"></script>
+  <script src="../site_libs/revealjs/plugin/zoom/zoom.js"></script>
+  <script src="../site_libs/revealjs/plugin/math/math.js"></script>
   <script>window.define = window.backupDefine; window.backupDefine = undefined;</script>
 
   <script>
@@ -720,7 +750,7 @@ p_2^T F p_1 = 0
         }
           var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
           var mailtoRegex = new RegExp(/^mailto:/);
-            var filterRegex = new RegExp('/' + window.location.host + '/');
+            var filterRegex = new RegExp("https:\/\/koikonomou\.github\.io\/marine_event_slam\/");
           var isInternal = (href) => {
               return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
           }
