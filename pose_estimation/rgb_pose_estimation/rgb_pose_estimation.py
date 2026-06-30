@@ -120,23 +120,16 @@ def pose_estimation( img, data, memory, outfile=None ):
     dt = t_curr - memory["prev_t"]
     if dt <= 0: dt = 0.001
 
-    # 2. Extract dead-reckoning metrics via Optical Flow
+    # Extract dead-reckoning metrics via Optical Flow
     vx_vis, vy_vis = get_visual_velocity(gray_frame, dt, yaw_rad, memory)
 
-    # 3. Fuse Positions (Complementary Filter)
-    # Prediction Step: Propagate previous fused position using visual velocity
+    # Propagate previous fused position using visual velocity
     x_pred = memory["x_fused"] + (vx_vis * dt)
     y_pred = memory["y_fused"] + (vy_vis * dt)
 
-    # Correction Step: Blend prediction with absolute absolute GPS measurements
+    # Correction Step: Blend prediction with absolute GPS measurements
     memory["x_fused"] = memory["alpha"] * x_pred + (1.0 - memory["alpha"]) * x_gps
     memory["y_fused"] = memory["alpha"] * y_pred + (1.0 - memory["alpha"]) * y_gps
-
-    # 4. Angular Smoothing (Optional IMU Gyro Integration)
-    # Fuses high frequency IMU gyro rates with raw absolute Euler orientations
-    #roll_speed_rad = np.radians(float(data["roll_speed"]))
-    #pitch_speed_rad = np.radians(float(data["pitch_speed"]))
-    #yaw_speed_rad = np.radians(float(data["yaw_speed"]))
 
     # Update timestamps
     memory["prev_t"] = t_curr

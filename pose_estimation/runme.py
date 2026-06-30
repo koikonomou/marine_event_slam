@@ -19,11 +19,11 @@ def main():
     elif sys.argv[3] == "rgb":
         sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'rgb_pose_estimation'))
         from rgb_pose_estimation import pose_estimation
-    elif sys.argv[3] == "gps":
+    elif sys.argv[3] == "imu":
         sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'blind_pose_estimation'))
-        from blind_pose_estimation import gps_pose_estimation as pose_estimation
+        from imu_pose_estimation import imu_pose_estimation as pose_estimation
     else:
-        print( "Usage: <imu> <frames> event|rgb|gps [<outdir>]" )
+        print( "Usage: <imu> <frames> event|rgb|imu [<outdir>]" )
         sys.exit(-1)
 
     try:
