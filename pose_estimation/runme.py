@@ -5,12 +5,6 @@ import numpy as np
 
 import cv2
 
-#sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'event_pose_estimation'))
-#from event_pose_estimation import pose_estimation
-
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'rgb_pose_estimation'))
-from rgb_pose_estimation import pose_estimation
-
 
 def main():
 
@@ -19,6 +13,20 @@ def main():
 
     fnames = sorted( glob.glob( sys.argv[2] ) )
 
+    if sys.argv[3] == "event":
+        sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'event_pose_estimation'))
+        from event_pose_estimation import pose_estimation
+    elif sys.argv[3] == "rgb":
+        sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'rgb_pose_estimation'))
+        from rgb_pose_estimation import pose_estimation
+    else:
+        sys.exit(-1)
+
+    try:
+        if sys.argv[4] == "T": debug_flag = True
+        else: debug_flag = False
+    except:
+        debug_flag = False
 
     mem = {}
     for fname in fnames:
@@ -37,8 +45,9 @@ def main():
 
         img_now = cv2.imread( fname )
         imu_now = dict( imu.loc[idx] )
-        pose, mem = pose_estimation( img_now, imu_now, mem )
+        pose, mem = pose_estimation( img_now, imu_now, mem, debug_flag )
 
-        print( f"From {fname} and {imu_now}: {pose}" )
+        if debug_flag:
+            print( f"From {fname} and {imu_now}: {pose}" )
     # end for
 
