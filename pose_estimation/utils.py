@@ -28,15 +28,16 @@ def geo_to_metric( lat, lon, memory ):
 
 
 
-def stabilize( img, imu ):
+def stabilize( img, pose ):
     """Transforms image to bring roll and pitch to horizon"""
 
     # Transform so that roll and pitch are zero. 
     REF_ROLL = 0
     REF_PITCH = 0
 
-    rot = imu["roll"]*(180.0/np.pi) - REF_ROLL
-    trY = (imu["pitch"]*(180.0/np.pi) - REF_PITCH) * pest.PITCH_TO_PXL
+    # Convert to rad
+    rot = pose["roll"]*(180.0/np.pi) - REF_ROLL
+    trY = (pose["pitch"]*(180.0/np.pi) - REF_PITCH) * pest.PITCH_TO_PXL
     trX = 0.0 # ignore yaw
 
     # Translation
@@ -46,7 +47,7 @@ def stabilize( img, imu ):
 
     # Rotation around img center
     h, w = img.shape[:2]
-    M_rot_2d = cv2.getRotationMatrix2D((w / 2, h / 2), -rot_degs, 1.0)
+    M_rot_2d = cv2.getRotationMatrix2D((w / 2, h / 2), -rot, 1.0)
     R_mat = np.eye(3)
     R_mat[0:2, 0:3] = M_rot_2d
 

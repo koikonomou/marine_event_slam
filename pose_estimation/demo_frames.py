@@ -82,7 +82,8 @@ def make_one_frame( outfile, img, pose, imu, prev_mem ):
 
         # bottom right inset: stabilized frame
         ax_stb = ax.inset_axes( [0.5, 0.55, 0.45, 0.45] )
-        ax_stb.imshow( cv2.cvtColor(img, cv2.COLOR_BGR2RGB) )
+        stb_img = utils.stabilize( img, pose )
+        ax_stb.imshow( cv2.cvtColor(stb_img, cv2.COLOR_BGR2RGB) )
         ax_stb.axis( "off" )
         ax_stb.set_title( "Stabilized", fontsize=8, pad=2 )
 
