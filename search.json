@@ -140,6 +140,13 @@
     "text": "Depth estimation in video\nWe don’t really need the two cameras, what we really needed was a way to create a measurable disparity.\nWhat if we had a moving camera?\nThen in subsequent frames we can:\n\nUse knowledge of the movement to measure \\(B\\)\nUse a method to recognize the same object to measure \\(d\\)"
   },
   {
+    "objectID": "index.html#usv-slam",
+    "href": "index.html#usv-slam",
+    "title": "USV SLAM",
+    "section": "USV SLAM",
+    "text": "USV SLAM\n\nPart 1\nPart 2"
+  },
+  {
     "objectID": "presentation/features.html#outline",
     "href": "presentation/features.html#outline",
     "title": "USV Pose Estimation and Depth Map Extraction",
