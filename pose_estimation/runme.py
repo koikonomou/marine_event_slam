@@ -19,14 +19,17 @@ def main():
     elif sys.argv[3] == "rgb":
         sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'rgb_pose_estimation'))
         from rgb_pose_estimation import pose_estimation
+    elif sys.argv[3] == "gps":
+        sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'blind_pose_estimation'))
+        from blind_pose_estimation import gps_pose_estimation as pose_estimation
     else:
+        print( "Usage: <imu> <frames> event|rgb|gps [<outdir>]" )
         sys.exit(-1)
 
     try:
-        if sys.argv[4] == "T": debug_flag = True
-        else: debug_flag = False
+        outdir = sys.argv[4]
     except:
-        debug_flag = False
+        outdir = None
 
     mem = {}
     for fname in fnames:
@@ -45,9 +48,11 @@ def main():
 
         img_now = cv2.imread( fname )
         imu_now = dict( imu.loc[idx] )
-        pose, mem = pose_estimation( img_now, imu_now, mem, debug_flag )
+        if outdir == None: outfile = None
+        else:
+            outfile = f"{outdir}/{ts_str}.png"
+        pose, mem = pose_estimation( img_now, imu_now, mem, f"{outfile}" )
 
-        if debug_flag:
-            print( f"From {fname} and {imu_now}: {pose}" )
+        #print( f"From {fname} and {imu_now}: {pose}" )
     # end for
 
