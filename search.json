@@ -140,18 +140,11 @@
     "text": "Depth estimation in video\nWe don’t really need the two cameras, what we really needed was a way to create a measurable disparity.\nWhat if we had a moving camera?\nThen in subsequent frames we can:\n\nUse knowledge of the movement to measure \\(B\\)\nUse a method to recognize the same object to measure \\(d\\)"
   },
   {
-    "objectID": "index.html",
-    "href": "index.html",
-    "title": "USV SLAM",
-    "section": "",
-    "text": "A\nB"
-  },
-  {
     "objectID": "presentation/features.html#outline",
     "href": "presentation/features.html#outline",
     "title": "USV Pose Estimation and Depth Map Extraction",
     "section": "Outline",
-    "text": "Outline\n\nWe have covered:\n\nRepresentations\nThe lens camera, stereoscopy\n\nMoving on to:\n\nOptical flow and pose estimation.\nFurther relevant sensors: IMU, GPS\nSensor fusion\nAI-based methods: Neural networks for pose estimation.\n3D map construction."
+    "text": "Outline\n\nWe have covered:\n\nRepresentations\nThe lens camera, stereoscopy\n\nMoving on to:\n\nOptical flow and pose estimation\nFurther relevant sensors: IMU, GPS\nSensor fusion\nAI-based methods: Neural networks for pose estimation.\n3D map construction."
   },
   {
     "objectID": "presentation/features.html#motion-can-support-stereoscopy",
@@ -242,6 +235,62 @@
     "href": "presentation/features.html#optical-flow-equation",
     "title": "USV Pose Estimation and Depth Map Extraction",
     "section": "Optical Flow Equation",
-    "text": "Optical Flow Equation\nWith distinctive features in place, we are ready to formulate the Optical Flow Equation\n\\[\nI_x v_x + I_y v_v + I_t = 0\n\\]\nwhere finds the velocity vector (in pixels) that best explains the change"
+    "text": "Optical Flow Equation\nOptical flow is an old concept, stemming from WWII-time research on pilot vision during landing.\nWhen used to express the brightness constancy assumption, it gives us the following mathematical formulation:\n\\[\n\\text{I}(p,t_0) - \\text{I}(p+d,t_1) = 0\n\\]\nwhere \\(p\\) is a point in pixel coordinates and \\(d\\) is the displacement in pixels of this point between time \\(t_0\\) and time \\(t_1\\)\nObviously we cannot solve this equation for \\(d\\) as there will not be a unique value for \\(d\\) that satisfies it."
+  },
+  {
+    "objectID": "presentation/features.html#lucas-kanade",
+    "href": "presentation/features.html#lucas-kanade",
+    "title": "USV Pose Estimation and Depth Map Extraction",
+    "section": "Lucas-Kanade",
+    "text": "Lucas-Kanade\nThe Lucas-Kanade methods adds the rigidness assumption in the form of a region around the pixel of interest with the same \\(d\\).\nWe now have a system of equations:\n\\[\n\\begin{matrix}\n\\text{I}(p_0,t_0) - \\text{I}(p_0+d,t_1) = 0 \\\\\n\\text{I}(p_1,t_0) - \\text{I}(p_1+d,t_1) = 0 \\\\\n\\text{I}(p_2,t_0) - \\text{I}(p_2+d,t_1) = 0 \\\\\n...\n\\end{matrix}\n\\]"
+  },
+  {
+    "objectID": "presentation/features.html#optimization-problem",
+    "href": "presentation/features.html#optimization-problem",
+    "title": "USV Pose Estimation and Depth Map Extraction",
+    "section": "Optimization Problem",
+    "text": "Optimization Problem\n\nIf we add a sufficient number of equations we will go from “too many solutions” to “no solution”\nThis is a happy problem, becase we know how to solve it: We will use an optimizer to find the value of \\(d\\) that minimizes the aggregated residue\nOur most efficient optimizers are linear optimizers, so if we can express \\(\\text{I}(p,t)\\) as a linear function we are all set\n\nCurrently, we have some unknown function sampled at pixel intervals"
+  },
+  {
+    "objectID": "presentation/features.html#linearization",
+    "href": "presentation/features.html#linearization",
+    "title": "USV Pose Estimation and Depth Map Extraction",
+    "section": "Linearization",
+    "text": "Linearization\n\nIf we take the Taylor expansion of our unknown underlying \\(\\text{I}(p,t)\\) we will have a summation over its derivatives, where the contribution of each derivative to the sum gets smaller as the order increases\n\n\\[\nf(x) = \\sum_{n=0}^{\\infty} \\frac{f^{(n)}(a)}{n!} (x-a)^n\n\\]\n\nWe will only keep the first derivative, so that we have a linear function\nUnder our high framerate assumption, this will be a good enough approximation\n\n\n\n\n\n\n\nNote\n\n\nWe are effectively imposing inertia on the motion"
+  },
+  {
+    "objectID": "presentation/features.html#linearization-1",
+    "href": "presentation/features.html#linearization-1",
+    "title": "USV Pose Estimation and Depth Map Extraction",
+    "section": "Linearization",
+    "text": "Linearization\nAfter differentiation, our system of equations is now:\n\\[\n\\begin{matrix}\n\\text{I}_x(p_0) \\text{d}_x + \\text{I}_y(p_0) \\text{d}_y + \\text{I}_t(p_0) = 0 \\\\\n\\text{I}_x(p_1) \\text{d}_x + \\text{I}_y(p_1) \\text{d}_y + \\text{I}_t(p_1) = 0 \\\\\n\\text{I}_x(p_2) \\text{d}_x + \\text{I}_y(p_2) \\text{d}_y + \\text{I}_t(p_2) = 0 \\\\\n...\n\\end{matrix}\n\\]\nThese are the theoretical, underlying functions that we sample when we use a camera.\nWe apply Sorbet-Feldman to calculate numerical values for the partial derivatives of \\(\\text{I}\\) at specific pixels \\(p_0, p_1,...\\)"
+  },
+  {
+    "objectID": "presentation/features.html#linearization-2",
+    "href": "presentation/features.html#linearization-2",
+    "title": "USV Pose Estimation and Depth Map Extraction",
+    "section": "Linearization",
+    "text": "Linearization\nSo now we have a linear system of equations similar to\n\\[\n\\begin{matrix}\n5 d_x - 13 d_y +  988 = 0 \\\\\n2 d_x - 9 d_y + 1973 = 0 \\\\\n2 d_x + 7 d_y + 2026 = 0 \\\\\n...\n\\end{matrix}\n\\]\nThis will normally have no solution, but we can use a linear optimizer to find the values of \\(d_x, d_y\\) that minimize residue.\nWe multiply by \\(\\Delta t\\) to get the disparity (d) in pixels needed to calculate depth using \\(D = f_x\\frac{B}{d}\\)"
+  },
+  {
+    "objectID": "presentation/features.html#on-assumptions-and-optimization",
+    "href": "presentation/features.html#on-assumptions-and-optimization",
+    "title": "USV Pose Estimation and Depth Map Extraction",
+    "section": "On Assumptions and Optimization",
+    "text": "On Assumptions and Optimization\n\nWe have developed a pipeline based on three assumptions\nInstead of solving a 2×2 system of equations, we put together a system with more equations tham variables, ensuring that it cannot be solved, and used an optimizer to find a good enough solution\nThis approach gives stability in the face of the assumptions mostly (as opposed to completely) holding"
+  },
+  {
+    "objectID": "presentation/features.html#outline-1",
+    "href": "presentation/features.html#outline-1",
+    "title": "USV Pose Estimation and Depth Map Extraction",
+    "section": "Outline",
+    "text": "Outline\n\nWe have covered:\n\nRepresentations\nThe lens camera, stereoscopy\nOptical flow and pose estimation\n\nMoving on to:\n\nFurther relevant sensors: IMU, GPS\nSensor fusion\nAI-based methods: Neural networks for pose estimation.\n3D map construction."
+  },
+  {
+    "objectID": "presentation/features.html#accelerometer-gyroscope-magnetometer",
+    "href": "presentation/features.html#accelerometer-gyroscope-magnetometer",
+    "title": "USV Pose Estimation and Depth Map Extraction",
+    "section": "Accelerometer, Gyroscope, Magnetometer",
+    "text": "Accelerometer, Gyroscope, Magnetometer\no"
   }
 ]

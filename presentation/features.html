@@ -153,7 +153,7 @@ Stasinos Konstantopoulos (stasinos@konstant.gr)
 </ul></li>
 <li><p>Moving on to:</p>
 <ul>
-<li><p>Optical flow and pose estimation.</p></li>
+<li><p>Optical flow and pose estimation</p></li>
 <li><p>Further relevant sensors: IMU, GPS</p></li>
 <li><p>Sensor fusion</p></li>
 <li><p>AI-based methods: Neural networks for pose estimation.</p></li>
@@ -370,11 +370,132 @@ M_c = 2 \frac{\det(A)}{\text{trace}(A)+0.001} = 2 \frac{\lambda_1\lambda_2}{\lam
 </section>
 <section id="optical-flow-equation" class="slide level2">
 <h2>Optical Flow Equation</h2>
-<p>With distinctive features in place, we are ready to formulate the <em>Optical Flow Equation</em></p>
+<p><em>Optical flow</em> is an old concept, stemming from WWII-time research on pilot vision during landing.</p>
+<p>When used to express the <em>brightness constancy</em> assumption, it gives us the following mathematical formulation:</p>
 <p><span class="math display">\[
-I_x v_x + I_y v_v + I_t = 0
+\text{I}(p,t_0) - \text{I}(p+d,t_1) = 0
 \]</span></p>
-<p>where finds the velocity vector (in pixels) that best explains the change</p>
+<p>where <span class="math inline">\(p\)</span> is a point in pixel coordinates and <span class="math inline">\(d\)</span> is the displacement in pixels of this point between time <span class="math inline">\(t_0\)</span> and time <span class="math inline">\(t_1\)</span></p>
+<p>Obviously we cannot solve this equation for <span class="math inline">\(d\)</span> as there will not be a unique value for <span class="math inline">\(d\)</span> that satisfies it.</p>
+</section>
+<section id="lucas-kanade" class="slide level2">
+<h2>Lucas-Kanade</h2>
+<p>The Lucas-Kanade methods adds the <em>rigidness</em> assumption in the form of a region around the pixel of interest with the same <span class="math inline">\(d\)</span>.</p>
+<p>We now have a system of equations:</p>
+<p><span class="math display">\[
+\begin{matrix}
+\text{I}(p_0,t_0) - \text{I}(p_0+d,t_1) = 0 \\
+\text{I}(p_1,t_0) - \text{I}(p_1+d,t_1) = 0 \\
+\text{I}(p_2,t_0) - \text{I}(p_2+d,t_1) = 0 \\
+...
+\end{matrix}
+\]</span></p>
+</section>
+<section id="optimization-problem" class="slide level2">
+<h2>Optimization Problem</h2>
+<ul>
+<li><p>If we add a sufficient number of equations we will go from “too many solutions” to “no solution”</p></li>
+<li><p>This is a happy problem, becase we know how to solve it: We will use an optimizer to find the value of <span class="math inline">\(d\)</span> that minimizes the aggregated residue</p></li>
+<li><p>Our most efficient optimizers are <em>linear optimizers</em>, so if we can express <span class="math inline">\(\text{I}(p,t)\)</span> as a linear function we are all set</p>
+<ul>
+<li>Currently, we have some unknown function sampled at pixel intervals</li>
+</ul></li>
+</ul>
+</section>
+<section id="linearization" class="slide level2">
+<h2>Linearization</h2>
+<ul>
+<li>If we take the Taylor expansion of our unknown underlying <span class="math inline">\(\text{I}(p,t)\)</span> we will have a summation over its derivatives, where the contribution of each derivative to the sum gets smaller as the order increases</li>
+</ul>
+<p><span class="math display">\[
+f(x) = \sum_{n=0}^{\infty} \frac{f^{(n)}(a)}{n!} (x-a)^n
+\]</span></p>
+<ul>
+<li><p>We will only keep the first derivative, so that we have a linear function</p></li>
+<li><p>Under our <em>high framerate</em> assumption, this will be a good enough approximation</p></li>
+</ul>
+<div class="callout callout-note callout-titled callout-style-default">
+<div class="callout-body">
+<div class="callout-title">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<p><strong>Note</strong></p>
+</div>
+<div class="callout-content">
+<p>We are effectively imposing inertia on the motion</p>
+</div>
+</div>
+</div>
+</section>
+<section id="linearization-1" class="slide level2">
+<h2>Linearization</h2>
+<p>After differentiation, our system of equations is now:</p>
+<p><span class="math display">\[
+\begin{matrix}
+\text{I}_x(p_0) \text{d}_x + \text{I}_y(p_0) \text{d}_y + \text{I}_t(p_0) = 0 \\
+\text{I}_x(p_1) \text{d}_x + \text{I}_y(p_1) \text{d}_y + \text{I}_t(p_1) = 0 \\
+\text{I}_x(p_2) \text{d}_x + \text{I}_y(p_2) \text{d}_y + \text{I}_t(p_2) = 0 \\
+...
+\end{matrix}
+\]</span></p>
+<p>These are the theoretical, underlying functions that we sample when we use a camera.</p>
+<p>We apply Sorbet-Feldman to calculate numerical values for the partial derivatives of <span class="math inline">\(\text{I}\)</span> at specific pixels <span class="math inline">\(p_0, p_1,...\)</span></p>
+</section>
+<section id="linearization-2" class="slide level2">
+<h2>Linearization</h2>
+<p>So now we have a linear system of equations similar to</p>
+<p><span class="math display">\[
+\begin{matrix}
+5 d_x - 13 d_y +  988 = 0 \\
+2 d_x - 9 d_y + 1973 = 0 \\
+2 d_x + 7 d_y + 2026 = 0 \\
+...
+\end{matrix}
+\]</span></p>
+<p>This will normally have no solution, but we can use a linear optimizer to find the values of <span class="math inline">\(d_x, d_y\)</span> that minimize residue.</p>
+<p>We multiply by <span class="math inline">\(\Delta t\)</span> to get the <em>disparity (d)</em> in pixels needed to calculate depth using <span class="math inline">\(D = f_x\frac{B}{d}\)</span></p>
+</section>
+<section id="on-assumptions-and-optimization" class="slide level2">
+<h2>On Assumptions and Optimization</h2>
+<ul>
+<li><p>We have developed a pipeline based on three assumptions</p></li>
+<li><p>Instead of solving a 2×2 system of equations, we put together a system with more equations tham variables, ensuring that it cannot be solved, and used an optimizer to find a good enough solution</p></li>
+<li><p>This approach gives stability in the face of the assumptions <em>mostly</em> (as opposed to completely) holding</p></li>
+</ul>
+</section>
+<section class="slide level2">
+
+</section></section>
+<section>
+<section id="other-sources-of-pose-information" class="title-slide slide level1 center">
+<h1>Other Sources of Pose Information</h1>
+
+</section>
+<section id="outline-1" class="slide level2">
+<h2>Outline</h2>
+<ul>
+<li><p>We have covered:</p>
+<ul>
+<li><p>Representations</p></li>
+<li><p>The lens camera, stereoscopy</p></li>
+<li><p>Optical flow and pose estimation</p></li>
+</ul></li>
+<li><p>Moving on to:</p>
+<ul>
+<li><p>Further relevant sensors: IMU, GPS</p></li>
+<li><p>Sensor fusion</p></li>
+<li><p>AI-based methods: Neural networks for pose estimation.</p></li>
+<li><p>3D map construction.</p></li>
+</ul></li>
+</ul>
+</section>
+<section id="accelerometer-gyroscope-magnetometer" class="slide level2">
+<h2>Accelerometer, Gyroscope, Magnetometer</h2>
+<p>o</p>
+</section>
+<section class="slide level2">
+
 
 
 </section></section>
