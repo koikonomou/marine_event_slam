@@ -5,12 +5,6 @@ import numpy as np
 
 import cv2
 
-#sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'event_pose_estimation'))
-#from event_pose_estimation import pose_estimation
-
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'rgb_pose_estimation'))
-from rgb_pose_estimation import pose_estimation
-
 
 def main():
 
@@ -19,6 +13,23 @@ def main():
 
     fnames = sorted( glob.glob( sys.argv[2] ) )
 
+    if sys.argv[3] == "event":
+        sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'event_pose_estimation'))
+        from event_pose_estimation import pose_estimation
+    elif sys.argv[3] == "rgb":
+        sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'rgb_pose_estimation'))
+        from rgb_pose_estimation import pose_estimation
+    elif sys.argv[3] == "imu":
+        sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'blind_pose_estimation'))
+        from imu_pose_estimation import imu_pose_estimation as pose_estimation
+    else:
+        print( "Usage: <imu> <frames> event|rgb|imu [<outdir>]" )
+        sys.exit(-1)
+
+    try:
+        outdir = sys.argv[4]
+    except:
+        outdir = None
 
     mem = {}
     for fname in fnames:
@@ -37,8 +48,11 @@ def main():
 
         img_now = cv2.imread( fname )
         imu_now = dict( imu.loc[idx] )
-        pose, mem = pose_estimation( img_now, imu_now, mem )
+        if outdir == None: outfile = None
+        else:
+            outfile = f"{outdir}/{ts_str}.png"
+        pose, mem = pose_estimation( img_now, imu_now, mem, f"{outfile}" )
 
-        print( f"From {fname} and {imu_now}: {pose}" )
+        #print( f"From {fname} and {imu_now}: {pose}" )
     # end for
 

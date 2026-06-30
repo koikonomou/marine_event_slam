@@ -1,26 +1,8 @@
 import numpy as np
 import cv2
 
+from pose_estimation import utils, demo_frames
 
-def lla_to_enu(lat, lon, memory):
-    """Converts geographic coordinates to local meters relative to origin."""
-    if not (memory.get("ref_lat") and memory.get("ref_lon")):
-        memory["ref_lat"] = lat
-        memory["ref_lon"] = lon
-        return 0.0, 0.0
-
-    lat_rad = np.radians(lat)
-    ref_lat_rad = np.radians(memory["ref_lat"])
-    delta_lon_rad = np.radians(lon - memory["ref_lon"])
-    delta_lat_rad = np.radians(lat - memory["ref_lat"])
-
-    sin_ref = np.sin(ref_lat_rad)
-    r_n = memory["EARTH_A"] / np.sqrt(1.0 - memory["EARTH_E2"] * sin_ref**2)
-    r_m = r_n * (1.0 - memory["EARTH_E2"]) / (1.0 - memory["EARTH_E2"] * sin_ref**2)
-
-    x = delta_lon_rad * r_n * np.cos(ref_lat_rad)
-    y = delta_lat_rad * r_m
-    return x, y
 
 def get_visual_velocity(gray_frame, dt, yaw_rad, memory):
     """
@@ -102,17 +84,18 @@ def init_memory():
     retv["prev_points"] = None
     retv["prev_t"] = None
 
+    # For visualization
+    retv["debug_trail"] = []
+
     return retv
 
 
 
-def pose_estimation( img, data, memory ):
+def pose_estimation( img, data, memory, outfile=None ):
 
     if memory == {}:
         memory = init_memory()
     
-    """Processes images and telemetry arrays to extract low-noise poses."""
-    # 1. Standardizations and structural setup
     t_curr = float(data["epoch"])
     lat = float(data["lat"])
     lon = float(data["lon"])
@@ -121,7 +104,7 @@ def pose_estimation( img, data, memory ):
     pitch_rad = np.radians(float(data["pitch"]))
     roll_rad = np.radians(float(data["roll"]))
 
-    x_gps, y_gps = lla_to_enu(lat, lon, memory)
+    x_gps, y_gps = utils.geo_to_metric( lat, lon, memory )
     gray_frame = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
     # Handle the initialization frame
@@ -137,23 +120,16 @@ def pose_estimation( img, data, memory ):
     dt = t_curr - memory["prev_t"]
     if dt <= 0: dt = 0.001
 
-    # 2. Extract dead-reckoning metrics via Optical Flow
+    # Extract dead-reckoning metrics via Optical Flow
     vx_vis, vy_vis = get_visual_velocity(gray_frame, dt, yaw_rad, memory)
 
-    # 3. Fuse Positions (Complementary Filter)
-    # Prediction Step: Propagate previous fused position using visual velocity
+    # Propagate previous fused position using visual velocity
     x_pred = memory["x_fused"] + (vx_vis * dt)
     y_pred = memory["y_fused"] + (vy_vis * dt)
 
-    # Correction Step: Blend prediction with absolute absolute GPS measurements
+    # Correction Step: Blend prediction with absolute GPS measurements
     memory["x_fused"] = memory["alpha"] * x_pred + (1.0 - memory["alpha"]) * x_gps
     memory["y_fused"] = memory["alpha"] * y_pred + (1.0 - memory["alpha"]) * y_gps
-
-    # 4. Angular Smoothing (Optional IMU Gyro Integration)
-    # Fuses high frequency IMU gyro rates with raw absolute Euler orientations
-    roll_speed_rad = np.radians(float(data["roll_speed"]))
-    pitch_speed_rad = np.radians(float(data["pitch_speed"]))
-    yaw_speed_rad = np.radians(float(data["yaw_speed"]))
 
     # Update timestamps
     memory["prev_t"] = t_curr
@@ -165,5 +141,9 @@ def pose_estimation( img, data, memory ):
         "pitch": pitch_rad,    # angle_fused = alpha*(angle_prev + speed*dt) + (1-alpha)*angle_raw
         "yaw": yaw_rad
     }
+
+    if outfile:
+        memory = demo_frames.make_one_frame( outfile, img, pose, data, memory )
+
     return pose, memory
 

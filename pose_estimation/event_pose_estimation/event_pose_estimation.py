@@ -4,8 +4,10 @@ import time
 import cv2
 import numpy as np
 
+from pose_estimation import demo_frames
 
-def pose_estimation(img, imu, prev_mem, debug=False):
+
+def pose_estimation(img, imu, prev_mem, outfile=None):
     focal_px = 800.0
     event_thresh = 0.20
     ACC_WINDOW = 7     # temporal accumulation window
@@ -159,85 +161,8 @@ def pose_estimation(img, imu, prev_mem, debug=False):
         'yaw':   round(prev_mem['yaw'], 3),
     }
 
-    if debug:
-        try:
-            lat = float(imu['lat'])
-            lon = float(imu['lon'])
-        except (KeyError, TypeError):
-            lat = lon = 0.0
-        prev_mem['debug_trail'].append({'x': pose['x'], 'y': pose['y'], 'lat': lat, 'lon': lon, 'yaw': pose['yaw']})
-
-        try:
-            import geopandas as gpd
-            from shapely.geometry import Point
-            import matplotlib
-            matplotlib.use('Agg')
-            import matplotlib.pyplot as plt
-
-            trail   = prev_mem['debug_trail']
-            pose_xs = [p['x'] for p in trail]
-            pose_ys = [p['y'] for p in trail]
-            gdf     = gpd.GeoDataFrame(
-                geometry=[Point(p['lon'], p['lat']) for p in trail],
-                crs='EPSG:4326'
-            )
-            gdf_utm = gdf.to_crs(gdf.estimate_utm_crs())
-            ox, oy  = gdf_utm.geometry.iloc[0].x, gdf_utm.geometry.iloc[0].y
-            gps_xs  = [p.x - ox for p in gdf_utm.geometry]
-            gps_ys  = [p.y - oy for p in gdf_utm.geometry]
-            errors  = [math.hypot(px - gx, py - gy)
-                       for px, py, gx, gy in zip(pose_xs, pose_ys, gps_xs, gps_ys)]
-
-            import contextily as ctx
-
-            utm_crs = gdf_utm.crs
-
-            # absolute UTM coords for GPS and pose (needed for tile fetch)
-            gps_abs_x  = [p.x for p in gdf_utm.geometry]
-            gps_abs_y  = [p.y for p in gdf_utm.geometry]
-            pose_abs_x = [ox + px for px in pose_xs]
-            pose_abs_y = [oy + py for py in pose_ys]
-
-            buf = 50
-            all_x = gps_abs_x + pose_abs_x
-            all_y = gps_abs_y + pose_abs_y
-
-            fig, ax = plt.subplots(figsize=(10, 10))
-            ax.set_xlim(min(all_x) - buf, max(all_x) + buf)
-            ax.set_ylim(min(all_y) - buf, max(all_y) + buf)
-            ax.plot(gps_abs_x,  gps_abs_y,  color='green',    lw=1.8, label='GPS')
-            ax.plot(pose_abs_x, pose_abs_y, color='steelblue', lw=1.5, ls='--', label='Pose')
-
-            # arrow at the current vessel position pointing in the current heading direction
-            yaw_now    = math.radians(trail[-1]['yaw'])
-            arrow_len  = buf * 0.1
-            ax.annotate('',
-                xy=(pose_abs_x[-1] + arrow_len * math.sin(yaw_now),
-                    pose_abs_y[-1] + arrow_len * math.cos(yaw_now)),
-                xytext=(pose_abs_x[-1], pose_abs_y[-1]),
-                arrowprops=dict(arrowstyle='->', color='steelblue',
-                                lw=2.5, mutation_scale=18))
-
-            ctx.add_basemap(ax, crs=utm_crs.to_string(),
-                            source=ctx.providers.OpenStreetMap.Mapnik, zoom='auto')
-            ax.set_aspect('equal')
-            ax.set_xlabel('UTM Easting (m)'); ax.set_ylabel('UTM Northing (m)')
-            ax.set_title(f'Trajectory vs GPS — Syros  (final {errors[-1]:.1f} m  mean {sum(errors)/len(errors):.1f} m)')
-            ax.legend()
-
-            # camera frame inset — bottom-left corner
-            ax_cam = ax.inset_axes([0.02, 0.02, 0.28, 0.28])
-            ax_cam.imshow(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
-            ax_cam.axis('off')
-            ax_cam.set_title('Camera', fontsize=8, pad=2)
-
-            plt.tight_layout()
-            out = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'trajectory.png')
-            plt.savefig(out, dpi=150)
-            plt.close(fig)
-            # print(f'[debug] final={errors[-1]:.1f}m  mean={sum(errors)/len(errors):.1f}m')
-        except Exception as e:
-            print(f'[debug] plot error: {e}')
+    if outfile:
+        prev_mem = demo_frames.make_one_frame( outfile, img, pose, imu, prev_mem )
 
     return pose, prev_mem
 
