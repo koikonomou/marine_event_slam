@@ -340,7 +340,7 @@
     "href": "presentation/features.html#optical-flowgps-vs-gps-only-1",
     "title": "USV Pose Estimation and Depth Map Extraction",
     "section": "Optical Flow/GPS vs GPS only",
-    "text": "Optical Flow/GPS vs GPS only\n\n\nSmall GPS error can be critical\n\n\n\n\n\n\nOriginal"
+    "text": "Optical Flow/GPS vs GPS only\n\nSmall GPS error can be critical"
   },
   {
     "objectID": "presentation/features.html#where-is-the-m-in-slam",
@@ -361,6 +361,6 @@
     "href": "presentation/features.html#the-map",
     "title": "USV Pose Estimation and Depth Map Extraction",
     "section": "The Map",
-    "text": "The Map\n\n\nInteractive map constructed from the April tests data"
+    "text": "The Map"
   }
 ]

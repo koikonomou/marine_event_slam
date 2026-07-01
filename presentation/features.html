@@ -578,21 +578,8 @@ f(x) = \sum_{n=0}^{\infty} \frac{f^{(n)}(a)}{n!} (x-a)^n
 </section>
 <section id="optical-flowgps-vs-gps-only-1" class="slide level2">
 <h2>Optical Flow/GPS vs GPS only</h2>
-<div class="columns">
-<div class="column" style="width:30%;">
-<p>Small GPS error can be critical</p>
-</div><div class="column" style="width:70%;">
 
-</div><div>
-<div class="quarto-figure quarto-figure-center" style="width: 100%; object-fit: cover;">
-<figure>
-<p><img data-src="rgb_demo_frame.jpeg"></p>
-<figcaption>Original</figcaption>
-</figure>
-</div>
-</div>
-</div>
-</section>
+<img data-src="rgb_demo_frame_cropped.jpeg" class="r-stretch quarto-figure-center"><p class="caption">Small GPS error can be critical</p></section>
 <section class="slide level2">
 
 </section></section>
@@ -623,13 +610,10 @@ f(x) = \sum_{n=0}^{\infty} \frac{f^{(n)}(a)}{n!} (x-a)^n
 </section>
 <section id="the-map" class="slide level2">
 <h2>The Map</h2>
-<div class="columns">
-<div class="column" style="width:40%;">
-<p>Interactive map constructed from the April tests data</p>
-</div><div class="column" style="width:60%;">
-<!-- 3D GLB Model Container -->
-<p><model-viewer src="presentation/map.glb" alt="A 3D model of an Unmanned Surface Vehicle" auto-rotate="" camera-controls="" shadow-intensity="1" background-color="#f0f0f0" style="width: 100%"> </model-viewer></p>
-</div></div>
+<p><model-viewer src="map.glb" ar="" camera-controls="" touch-action="pan-y" alt="3D Map" scale="10 10 10" style="width: 100%; height: 500px;"> </model-viewer></p>
+</section>
+<section class="slide level2">
+
 
 
 </section></section>
@@ -757,7 +741,7 @@ f(x) = \sum_{n=0}^{\infty} \frac{f^{(n)}(a)}{n!} (x-a)^n
         showNotes: false,
 
         // Global override for autoplaying embedded media (null/true/false)
-        autoPlayMedia: null,
+        autoPlayMedia: true,
 
         // Global override for preloading lazy-loaded iframes (null/true/false)
         preloadIframes: null,
