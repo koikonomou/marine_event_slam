@@ -329,11 +329,18 @@
     "text": "The Extended Kalman Filter (EKF)\n(More than 17 slides dense with maths later)\nSo the key intuition is:\n\nThe filter keeps track of a system’s state (here, pose) under uncertainty\n\nas distributions, not as specific values\n\nThe filter receives multiple new observations (here, pose from different methods) that have independent error (do not err in the same direction)\nThe filter applies statistical and control theory wizardly to:\n\nbehave as a stabilizer by giving ‘inertia’ to the previous state\nbehave as a smoothener by maintaing a statistical representation of the values in the state vector"
   },
   {
-    "objectID": "presentation/features.html#optical-flowgps-vs.-gps-only",
-    "href": "presentation/features.html#optical-flowgps-vs.-gps-only",
+    "objectID": "presentation/features.html#optical-flowgps-vs-gps-only",
+    "href": "presentation/features.html#optical-flowgps-vs-gps-only",
     "title": "USV Pose Estimation and Depth Map Extraction",
-    "section": "Optical Flow/GPS vs. GPS only",
-    "text": "Optical Flow/GPS vs. GPS only\n\n\nData from trials last April,\n\nIrregular framerate, around 1 FPS.\n\n\n\nYour browser does not support the video tag."
+    "section": "Optical Flow/GPS vs GPS only",
+    "text": "Optical Flow/GPS vs GPS only\n\n\nData from trials last April,\n\nIrregular framerate, around 1 FPS."
+  },
+  {
+    "objectID": "presentation/features.html#optical-flowgps-vs-gps-only-1",
+    "href": "presentation/features.html#optical-flowgps-vs-gps-only-1",
+    "title": "USV Pose Estimation and Depth Map Extraction",
+    "section": "Optical Flow/GPS vs GPS only",
+    "text": "Optical Flow/GPS vs GPS only\n\n\nSmall GPS error can be critical\n\n\n\n\n\n\nOriginal"
   },
   {
     "objectID": "presentation/features.html#where-is-the-m-in-slam",
