@@ -61,10 +61,11 @@ def get_visual_velocity(gray_frame, dt, yaw_rad, memory):
 def init_memory():
     retv = {}
     # Static
-    retv["fx"] = 1
-    retv["fy"] = 1
+    retv["scale_factor"] = 1.0
+    retv["fx"] = 1440 * retv["scale_factor"]
+    retv["fy"] = 1440 * retv["scale_factor"]
     retv["h"] = 0.2
-    retv["alpha"] = 0.85
+    retv["alpha"] = 0.6
 
     # WGS84 Ellipsoid constants tailored for global Transverse Mercator (UTM Zone 35N)
     retv["EARTH_A"] = 6378137.0         # Semi-major axis (meters)
@@ -91,11 +92,13 @@ def init_memory():
 
 
 
-def pose_estimation( img, data, memory, outfile=None ):
+def pose_estimation( img_orig, data, memory, outfile=None ):
 
     if memory == {}:
         memory = init_memory()
-    
+
+    img = cv2.resize(img_orig, (0, 0), fx=memory["scale_factor"], fy=memory["scale_factor"], interpolation=cv2.INTER_AREA)
+
     t_curr = float(data["epoch"])
     lat = float(data["lat"])
     lon = float(data["lon"])

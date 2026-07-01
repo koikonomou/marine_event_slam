@@ -56,15 +56,19 @@ def make_one_frame( outfile, img, pose, imu, prev_mem ):
         ax.plot(gps_abs_x,  gps_abs_y,  color='green',    lw=1.8, label='GPS')
         ax.plot(pose_abs_x, pose_abs_y, color='steelblue', lw=1.5, ls='--', label='Pose')
 
-        # arrow at the current vessel position pointing in the current heading direction
-        yaw_now    = math.radians(trail[-1]['yaw'])
-        arrow_len  = buf * 0.1
-        ax.annotate('',
-            xy=(pose_abs_x[-1] + arrow_len * math.sin(yaw_now),
-                pose_abs_y[-1] + arrow_len * math.cos(yaw_now)),
-            xytext=(pose_abs_x[-1], pose_abs_y[-1]),
-            arrowprops=dict(arrowstyle='->', color='steelblue',
-                            lw=2.5, mutation_scale=18))
+        if 1 == 0:
+            # arrow at the current vessel position pointing in the current heading direction
+            yaw_now    = trail[-1]['yaw']
+            arrow_len  = buf * 0.1
+            ax.annotate('',
+                xy=(pose_abs_x[-1] + arrow_len * math.sin(yaw_now),
+                    pose_abs_y[-1] + arrow_len * math.cos(yaw_now)),
+                xytext=(pose_abs_x[-1], pose_abs_y[-1]),
+                arrowprops=dict(arrowstyle='->', color='steelblue', lw=2.5, mutation_scale=18))
+        else:
+            # non-directional marks
+            ax.scatter( gps_abs_x[-1], gps_abs_y[-1], marker="x", color="darkgreen", s=100, lw=1, zorder=5 )
+            ax.scatter( pose_abs_x[-1],pose_abs_y[-1],marker="x", color="blue", s=100, lw=1, zorder=5 )
 
         ctx.add_basemap(ax, crs=utm_crs.to_string(),
                         source=ctx.providers.OpenStreetMap.Mapnik, zoom="auto")
