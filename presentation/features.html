@@ -156,7 +156,6 @@ Stasinos Konstantopoulos (stasinos@konstant.gr)
 <li><p>Optical flow and pose estimation</p></li>
 <li><p>Further relevant sensors: IMU, GPS</p></li>
 <li><p>Sensor fusion</p></li>
-<li><p>AI-based methods: Neural networks for pose estimation.</p></li>
 <li><p>3D map construction.</p></li>
 </ul></li>
 </ul>
@@ -345,19 +344,6 @@ Stasinos Konstantopoulos (stasinos@konstant.gr)
 <li><p>The Structure Tensor gives us the distribution of gradients in the area.</p></li>
 <li><p>If both eigenvalues are relatively large, we have a corner; if only one is large, we have an edge; if neither we are at a flat surface.</p></li>
 </ul>
-<div class="callout callout-note callout-titled callout-style-default">
-<div class="callout-body">
-<div class="callout-title">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
-</div>
-<p><strong>Note</strong></p>
-</div>
-<div class="callout-content">
-<p>We will revisit this to get algebraic confirmation to the intuition that corners are more suitable than edges</p>
-</div>
-</div>
-</div>
 </section>
 <section id="shi-tomasi-score-2" class="slide level2">
 <h2>Shi-Tomasi Score</h2>
@@ -459,17 +445,40 @@ f(x) = \sum_{n=0}^{\infty} \frac{f^{(n)}(a)}{n!} (x-a)^n
 <section id="on-assumptions-and-optimization" class="slide level2">
 <h2>On Assumptions and Optimization</h2>
 <ul>
-<li><p>We have developed a pipeline based on three assumptions</p></li>
-<li><p>Instead of solving a 2×2 system of equations, we put together a system with more equations tham variables, ensuring that it cannot be solved, and used an optimizer to find a good enough solution</p></li>
+<li><p>Instead of solving a 2×2 system of equations, we put together a system with more equations than variables, ensuring that it cannot be solved, and used an optimizer to find a good enough solution</p></li>
 <li><p>This approach gives stability in the face of the assumptions <em>mostly</em> (as opposed to completely) holding</p></li>
+<li><p>We have assumed linear, inertial, motion. If this creates <em>systematic</em> error that makes <em>all</em> equation give wrong results, we are doomed and no optimization trick can save us</p></li>
+</ul>
+<div class="callout callout-note callout-titled callout-style-default">
+<div class="callout-body">
+<div class="callout-title">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<p><strong>Note</strong></p>
+</div>
+<div class="callout-content">
+<p>Maybe the class can hypothesise about when this might happen?</p>
+</div>
+</div>
+</div>
+</section>
+<section id="on-computational-efficiency" class="slide level2">
+<h2>On Computational Efficiency</h2>
+<ul>
+<li><p>Is it worth shaving off a few nanoseconds here and there at the expense of accuracy?is worth</p></li>
+<li><p>The pipeline above gives the depth for <em>one</em> pixel; at 1024×768 and 1 FPS gaining 10nsec per frame is 0.8% of your CPU</p></li>
+<li><p>Your CPU is pretty weak, 10 nsec is conservative. Experiment to see the impact of each optimization.</p></li>
+<li><p>Your CPU has many jobs to execute. 0.8% of the CPU is not negligible, and 1FPS is too sparse</p></li>
+<li><p>Remember our assumptions and the linearization discussion? Being able to operate at higher framerates can have <em>huge</em> impact, a lot bigger than full, high-accuracy computations</p></li>
 </ul>
 </section>
 <section class="slide level2">
 
 </section></section>
 <section>
-<section id="other-sources-of-pose-information" class="title-slide slide level1 center">
-<h1>Other Sources of Pose Information</h1>
+<section id="other-sources-of-pose" class="title-slide slide level1 center">
+<h1>Other Sources of Pose</h1>
 
 </section>
 <section id="outline-1" class="slide level2">
@@ -485,17 +494,124 @@ f(x) = \sum_{n=0}^{\infty} \frac{f^{(n)}(a)}{n!} (x-a)^n
 <ul>
 <li><p>Further relevant sensors: IMU, GPS</p></li>
 <li><p>Sensor fusion</p></li>
-<li><p>AI-based methods: Neural networks for pose estimation.</p></li>
 <li><p>3D map construction.</p></li>
 </ul></li>
 </ul>
 </section>
 <section id="accelerometer-gyroscope-magnetometer" class="slide level2">
 <h2>Accelerometer, Gyroscope, Magnetometer</h2>
-<p>o</p>
+<p>The 9-DOF IMU:</p>
+<ul>
+<li><p><em>Accelerometer:</em> 3D acceleration</p></li>
+<li><p><em>Gyroscope:</em> 3D angular velosity</p></li>
+<li><p><em>Magnetometer:</em> 3D magnetic force field</p></li>
+</ul>
+<p>Pitch, roll, and yaw and their rate of change are calculated from the 9-DOF IMU</p>
+<div class="callout callout-note callout-titled callout-style-default">
+<div class="callout-body">
+<div class="callout-title">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<p><strong>Note</strong></p>
+</div>
+<div class="callout-content">
+<p>Note how all three sensors measure forces, which makes sense.</p>
+</div>
+</div>
+</div>
+</section>
+<section id="gps" class="slide level2">
+<h2>GPS</h2>
+<p>The GPS gives geolocation</p>
+<ul>
+<li><p>Can be converted to a metric space via a projection</p></li>
+<li><p>Use UTM Zone 35N, although Syros almost on the fence between 34N and 35N</p></li>
+</ul>
+</section>
+<section id="sensor-fusion" class="slide level2">
+<h2>Sensor Fusion</h2>
+<ul>
+<li><p>GPS can have a few meters of error, but the error does not accumulate</p></li>
+<li><p>IMU starts out very accurate, but drifts over time</p></li>
+<li><p>Optical Flow accuracy can vary wildly; Optical Flow is differencial similarly to IMU, so its error accumulates.</p></li>
+<li><p>It makes sense to <em>fuse</em> the different measurements in a way that exploits their respective strengths</p></li>
+</ul>
+</section>
+<section id="the-extended-kalman-filter-ekf" class="slide level2">
+<h2>The Extended Kalman Filter (EKF)</h2>
+<ul>
+<li><p>Any aggregation function, (weighted) mean, max, min, can be considered fusion but the <em>Kalman Filter</em> excels in fusing a low-accuracy non-drifting measurement with a drifting measurement</p></li>
+<li><p>The KF is only applicable to lieanr systems, the <em>Extended Kalman Filter (EKF)</em> is a linearization that extends the filter’s applicability to systems that can locally linearly approximated</p></li>
+</ul>
+</section>
+<section id="the-extended-kalman-filter-ekf-1" class="slide level2">
+<h2>The Extended Kalman Filter (EKF)</h2>
+<p><em>(More than 17 slides dense with maths later)</em></p>
+<p>So the key intuition is:</p>
+<ul>
+<li><p>The filter keeps track of a system’s <em>state</em> (here, pose) under uncertainty</p>
+<ul>
+<li>as <em>distributions</em>, not as specific values</li>
+</ul></li>
+<li><p>The filter receives multiple new observations (here, pose from different methods) that have <em>independent</em> error (do not err in the same direction)</p></li>
+<li><p>The filter applies statistical and control theory wizardly to:</p>
+<ul>
+<li><p>behave as a stabilizer by giving ‘inertia’ to the previous state</p></li>
+<li><p>behave as a smoothener by maintaing a <em>statistical</em> representation of the values in the state vector</p></li>
+</ul></li>
+</ul>
+</section>
+<section id="optical-flowgps-vs.-gps-only" class="slide level2">
+<h2>Optical Flow/GPS vs.&nbsp;GPS only</h2>
+<div class="columns">
+<div class="column" style="width:30%;">
+<p>Data from trials last April,</p>
+<ul>
+<li>Irregular framerate, around 1 FPS.</li>
+</ul>
+</div><div class="column" style="width:70%;">
+<video data-autoplay="" src="rgb_demo.mp4" width="100%" controls="">
+</video>
+</div></div>
 </section>
 <section class="slide level2">
 
+</section></section>
+<section>
+<section id="mapping" class="title-slide slide level1 center">
+<h1>Mapping</h1>
+
+</section>
+<section id="where-is-the-m-in-slam" class="slide level2">
+<h2>Where is the <em>M</em> in SLAM?</h2>
+<ul>
+<li><p>We have so far only discussed pose estimation. Where is the map?</p></li>
+<li><p>In IMU/GPS localization there is no environmental observations, the vehicle is either geolocalized or localized wrt. its previous pose</p></li>
+<li><p>Optical flow has the advantage that localization is a by-product of depth estimation: the vehicle is localized wrt. objects in the environment</p>
+<ul>
+<li><p>Not only optical flow, but all range-finding sensors (lidar, radar)</p></li>
+<li><p>Optical flow is more interesting, because range information is not inherent to the sensor but takes some effort to extract</p></li>
+</ul></li>
+</ul>
+</section>
+<section id="constructing-the-map" class="slide level2">
+<h2>Constructing the map</h2>
+<ul>
+<li><p>For all range-finding localizers, the map is the point-cloud that is constructed by stitching together the depth images</p></li>
+<li><p>Using the vehicle pose to rotate/translate them to a global origin</p></li>
+<li><p>A fully constructed map will make subsequent localization more accurate</p></li>
+</ul>
+</section>
+<section id="the-map" class="slide level2">
+<h2>The Map</h2>
+<div class="columns">
+<div class="column" style="width:40%;">
+<p>Interactive map constructed from the April tests data</p>
+</div><div class="column" style="width:60%;">
+<!-- 3D GLB Model Container -->
+<p><model-viewer src="map.glb" alt="A 3D model of an Unmanned Surface Vehicle" auto-rotate="" camera-controls="" shadow-intensity="1" background-color="#f0f0f0" style="width: 100%"> </model-viewer></p>
+</div></div>
 
 
 </section></section>

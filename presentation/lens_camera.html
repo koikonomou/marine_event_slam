@@ -216,15 +216,19 @@ Stasinos Konstantopoulos (stasinos@konstant.gr)
 </section>
 <section id="rgb-image" class="slide level2">
 <h2>RGB Image</h2>
+<div class="columns">
+<div class="column" style="width:55%;">
 <ul>
 <li><p>An image is the 2D projection of the real-world pointcloud.</p></li>
-<li><p>Two pieces of information are lost:</p>
-<ul>
 <li><p>Depth is lost as voxels are projected to an <em>image plane</em></p></li>
-<li><p>Distance is lost as metric coordinates are transformed to relative position in the frame (pixel coordinates)</p></li>
-</ul></li>
 <li><p>Even assuming a perfect way to recognize rigid bodies, <em>obstacles</em>, from water, foam, and other <em>navigable space</em> we cannot trivially map pixel coordinates to metric voxel coordinates</p></li>
 </ul>
+</div><div class="column" style="width:5%;">
+
+</div><div class="column" style="width:40%;">
+<p><img data-src="pexels-29831317.jpeg"></p>
+<p>Attribution: <a href="https://www.pexels.com/photo/29831317">Pexels 29831317</a></p>
+</div></div>
 </section>
 <section id="rgb-d-image" class="slide level2">
 <h2>RGB-D Image</h2>
@@ -305,15 +309,14 @@ f_x &amp; 0 &amp; c_x \\
 <section id="from-physical-coordinates-to-pixel-coordinates" class="slide level2">
 <h2>From physical coordinates to pixel coordinates</h2>
 <p>For a point <span class="math inline">\(P = [W,H,D]\)</span> within our FOV, the pixel coordinates <span class="math inline">\(w,h\)</span> will be the vector <span class="math inline">\(K P\)</span>, normalized by <span class="math inline">\(D\)</span>: <span class="math display">\[
-K P =
-K = \begin{bmatrix}
+K P = \begin{bmatrix}
 f_x &amp; 0 &amp; c_x \\
 0 &amp; f_y &amp; c_y \\
 0 &amp; 0 &amp; 1
 \end{bmatrix}
 \begin{bmatrix}
-X \\
-Y \\
+W \\
+H \\
 D
 \end{bmatrix}
 = \begin{bmatrix}
@@ -343,7 +346,6 @@ h = f_y\frac{H}{D} + c_y
 <p>We have lots of angular information, but not enough metric information. We need to somehow ‘ground’ angular positions in the FOV to actual meters.</p>
 <p>A stereo camera is two cameras with an <em>accurately</em> known baseline distance <span class="math inline">\(B\)</span>.</p>
 <p>We have a mechanism for making both cameras focus on the same object.</p>
-<p>From calibration, we know the <em>disparity</em> <span class="math inline">\(d\)</span> in pixels between in-focus objects, that is, we know <span class="math inline">\(w_L - w_R\)</span>.</p>
 </div><div class="column" style="width:45%;">
 <p><img data-src="stereo.png"></p>
 </div></div>
@@ -411,7 +413,7 @@ R = \begin{bmatrix}
 <p><strong>Note</strong></p>
 </div>
 <div class="callout-content">
-<p>This looks bad, but is already implemented. It is, nevertheless, often beneficial to have an idea of what is implemented in the libraries you use.</p>
+<p>The right-most column uses an alternative notation that is common in the computer vision literature; For the purpose of introducing you to this notation and for making the equation fit the slide</p>
 </div>
 </div>
 </div>
@@ -446,21 +448,6 @@ p_2^T F p_1 = 0
 <ul>
 <li><p>Not single pixels, as a single pixel is not distinctive enough to recognize</p></li>
 <li><p>We shall call these chunks ‘features’</p></li>
-</ul>
-</section></section>
-<section>
-<section id="depth-estimation-in-video" class="title-slide slide level1 center">
-<h1>Depth estimation in video</h1>
-
-</section>
-<section id="depth-estimation-in-video-1" class="slide level2">
-<h2>Depth estimation in video</h2>
-<p>We don’t really need the two cameras, what we really needed was a way to create a measurable disparity.</p>
-<p>What if we had a moving camera?</p>
-<p>Then in subsequent frames we can:</p>
-<ul>
-<li><p>Use knowledge of the movement to measure <span class="math inline">\(B\)</span></p></li>
-<li><p>Use a method to recognize the same object to measure <span class="math inline">\(d\)</span></p></li>
 </ul>
 
 

@@ -25,7 +25,7 @@
     "href": "presentation/lens_camera.html#rgb-image",
     "title": "USV Pose Estimation and Depth Map Extraction",
     "section": "RGB Image",
-    "text": "RGB Image\n\nAn image is the 2D projection of the real-world pointcloud.\nTwo pieces of information are lost:\n\nDepth is lost as voxels are projected to an image plane\nDistance is lost as metric coordinates are transformed to relative position in the frame (pixel coordinates)\n\nEven assuming a perfect way to recognize rigid bodies, obstacles, from water, foam, and other navigable space we cannot trivially map pixel coordinates to metric voxel coordinates"
+    "text": "RGB Image\n\n\n\nAn image is the 2D projection of the real-world pointcloud.\nDepth is lost as voxels are projected to an image plane\nEven assuming a perfect way to recognize rigid bodies, obstacles, from water, foam, and other navigable space we cannot trivially map pixel coordinates to metric voxel coordinates\n\n\n\n\n\nAttribution: Pexels 29831317"
   },
   {
     "objectID": "presentation/lens_camera.html#rgb-d-image",
@@ -74,7 +74,7 @@
     "href": "presentation/lens_camera.html#from-physical-coordinates-to-pixel-coordinates",
     "title": "USV Pose Estimation and Depth Map Extraction",
     "section": "From physical coordinates to pixel coordinates",
-    "text": "From physical coordinates to pixel coordinates\nFor a point \\(P = [W,H,D]\\) within our FOV, the pixel coordinates \\(w,h\\) will be the vector \\(K P\\), normalized by \\(D\\): \\[\nK P =\nK = \\begin{bmatrix}\nf_x & 0 & c_x \\\\\n0 & f_y & c_y \\\\\n0 & 0 & 1\n\\end{bmatrix}\n\\begin{bmatrix}\nX \\\\\nY \\\\\nD\n\\end{bmatrix}\n= \\begin{bmatrix}\nf_x W + c_x D \\\\\nf_y H + c_y D \\\\\nD\n\\end{bmatrix}\n\\]\nSo that pixel coordinates are \\(w = f_x\\frac{W}{D} + c_x\\) and \\(h = f_y\\frac{H}{D} + c_y\\)"
+    "text": "From physical coordinates to pixel coordinates\nFor a point \\(P = [W,H,D]\\) within our FOV, the pixel coordinates \\(w,h\\) will be the vector \\(K P\\), normalized by \\(D\\): \\[\nK P = \\begin{bmatrix}\nf_x & 0 & c_x \\\\\n0 & f_y & c_y \\\\\n0 & 0 & 1\n\\end{bmatrix}\n\\begin{bmatrix}\nW \\\\\nH \\\\\nD\n\\end{bmatrix}\n= \\begin{bmatrix}\nf_x W + c_x D \\\\\nf_y H + c_y D \\\\\nD\n\\end{bmatrix}\n\\]\nSo that pixel coordinates are \\(w = f_x\\frac{W}{D} + c_x\\) and \\(h = f_y\\frac{H}{D} + c_y\\)"
   },
   {
     "objectID": "presentation/lens_camera.html#inverting-back-to-physical-coordinates",
@@ -88,7 +88,7 @@
     "href": "presentation/lens_camera.html#stereoscopic-vision",
     "title": "USV Pose Estimation and Depth Map Extraction",
     "section": "Stereoscopic vision",
-    "text": "Stereoscopic vision\n\n\nWe have lots of angular information, but not enough metric information. We need to somehow ‘ground’ angular positions in the FOV to actual meters.\nA stereo camera is two cameras with an accurately known baseline distance \\(B\\).\nWe have a mechanism for making both cameras focus on the same object.\nFrom calibration, we know the disparity \\(d\\) in pixels between in-focus objects, that is, we know \\(w_L - w_R\\)."
+    "text": "Stereoscopic vision\n\n\nWe have lots of angular information, but not enough metric information. We need to somehow ‘ground’ angular positions in the FOV to actual meters.\nA stereo camera is two cameras with an accurately known baseline distance \\(B\\).\nWe have a mechanism for making both cameras focus on the same object."
   },
   {
     "objectID": "presentation/lens_camera.html#stereoscopic-vision-1",
@@ -109,7 +109,7 @@
     "href": "presentation/lens_camera.html#camera-extrinsics-matrix-1",
     "title": "USV Pose Estimation and Depth Map Extraction",
     "section": "Camera Extrinsics Matrix",
-    "text": "Camera Extrinsics Matrix\nIf you work out the multiplications, you will get:\n\\[\nR = \\begin{bmatrix}\n\\cos\\psi\\cos\\theta &\n   \\cos\\psi\\sin\\theta\\sin\\phi - \\sin\\psi\\cos\\phi &\n   \\text{c}_\\psi \\text{s}_\\theta \\text{c}_\\phi + \\text{s}_\\psi\\text{s}_\\phi \\\\\n\\sin\\psi\\cos\\theta &\n   \\sin\\psi\\sin\\theta\\sin\\phi + \\cos\\psi\\cos\\phi &\n   \\text{s}_\\psi\\text{s}_\\theta\\text{c}_\\phi - \\text{c}_\\psi\\text{s}_\\phi \\\\\n-\\sin\\theta & \\cos\\theta\\sin\\phi & \\text{c}_\\theta\\text{c}_\\phi\n\\end{bmatrix}\n\\]\n\n\n\n\n\n\nNote\n\n\nThis looks bad, but is already implemented. It is, nevertheless, often beneficial to have an idea of what is implemented in the libraries you use."
+    "text": "Camera Extrinsics Matrix\nIf you work out the multiplications, you will get:\n\\[\nR = \\begin{bmatrix}\n\\cos\\psi\\cos\\theta &\n   \\cos\\psi\\sin\\theta\\sin\\phi - \\sin\\psi\\cos\\phi &\n   \\text{c}_\\psi \\text{s}_\\theta \\text{c}_\\phi + \\text{s}_\\psi\\text{s}_\\phi \\\\\n\\sin\\psi\\cos\\theta &\n   \\sin\\psi\\sin\\theta\\sin\\phi + \\cos\\psi\\cos\\phi &\n   \\text{s}_\\psi\\text{s}_\\theta\\text{c}_\\phi - \\text{c}_\\psi\\text{s}_\\phi \\\\\n-\\sin\\theta & \\cos\\theta\\sin\\phi & \\text{c}_\\theta\\text{c}_\\phi\n\\end{bmatrix}\n\\]\n\n\n\n\n\n\nNote\n\n\nThe right-most column uses an alternative notation that is common in the computer vision literature; For the purpose of introducing you to this notation and for making the equation fit the slide"
   },
   {
     "objectID": "presentation/lens_camera.html#putting-it-all-together",
@@ -133,13 +133,6 @@
     "text": "Time for a short break\nWe have now transformed the original SLAM problem into the computer vision problem of recognizing the same chunk of the physical world in two images of the same scene.\n\nNot single pixels, as a single pixel is not distinctive enough to recognize\nWe shall call these chunks ‘features’"
   },
   {
-    "objectID": "presentation/lens_camera.html#depth-estimation-in-video-1",
-    "href": "presentation/lens_camera.html#depth-estimation-in-video-1",
-    "title": "USV Pose Estimation and Depth Map Extraction",
-    "section": "Depth estimation in video",
-    "text": "Depth estimation in video\nWe don’t really need the two cameras, what we really needed was a way to create a measurable disparity.\nWhat if we had a moving camera?\nThen in subsequent frames we can:\n\nUse knowledge of the movement to measure \\(B\\)\nUse a method to recognize the same object to measure \\(d\\)"
-  },
-  {
     "objectID": "index.html#usv-slam",
     "href": "index.html#usv-slam",
     "title": "USV SLAM",
@@ -151,7 +144,7 @@
     "href": "presentation/features.html#outline",
     "title": "USV Pose Estimation and Depth Map Extraction",
     "section": "Outline",
-    "text": "Outline\n\nWe have covered:\n\nRepresentations\nThe lens camera, stereoscopy\n\nMoving on to:\n\nOptical flow and pose estimation\nFurther relevant sensors: IMU, GPS\nSensor fusion\nAI-based methods: Neural networks for pose estimation.\n3D map construction."
+    "text": "Outline\n\nWe have covered:\n\nRepresentations\nThe lens camera, stereoscopy\n\nMoving on to:\n\nOptical flow and pose estimation\nFurther relevant sensors: IMU, GPS\nSensor fusion\n3D map construction."
   },
   {
     "objectID": "presentation/features.html#motion-can-support-stereoscopy",
@@ -228,7 +221,7 @@
     "href": "presentation/features.html#shi-tomasi-score-1",
     "title": "USV Pose Estimation and Depth Map Extraction",
     "section": "Shi-Tomasi Score",
-    "text": "Shi-Tomasi Score\n\\[\n\\text{Structure Tensor } A = \\begin{bmatrix}\n\\left&lt; I_x^2 \\right&gt;  & \\left&lt; I_x I_y \\right&gt; \\\\\n\\left&lt; I_x I_y \\right&gt; & \\left&lt; I_y^2 \\right&gt;   \\\\\n\\end{bmatrix}\n\\]\nwhere \\(\\left&lt;\\cdot\\right&gt;\\) is the Gaussian or other aggregation over the local area.\n\nThe Structure Tensor gives us the distribution of gradients in the area.\nIf both eigenvalues are relatively large, we have a corner; if only one is large, we have an edge; if neither we are at a flat surface.\n\n\n\n\n\n\n\nNote\n\n\nWe will revisit this to get algebraic confirmation to the intuition that corners are more suitable than edges"
+    "text": "Shi-Tomasi Score\n\\[\n\\text{Structure Tensor } A = \\begin{bmatrix}\n\\left&lt; I_x^2 \\right&gt;  & \\left&lt; I_x I_y \\right&gt; \\\\\n\\left&lt; I_x I_y \\right&gt; & \\left&lt; I_y^2 \\right&gt;   \\\\\n\\end{bmatrix}\n\\]\nwhere \\(\\left&lt;\\cdot\\right&gt;\\) is the Gaussian or other aggregation over the local area.\n\nThe Structure Tensor gives us the distribution of gradients in the area.\nIf both eigenvalues are relatively large, we have a corner; if only one is large, we have an edge; if neither we are at a flat surface."
   },
   {
     "objectID": "presentation/features.html#shi-tomasi-score-2",
@@ -284,20 +277,83 @@
     "href": "presentation/features.html#on-assumptions-and-optimization",
     "title": "USV Pose Estimation and Depth Map Extraction",
     "section": "On Assumptions and Optimization",
-    "text": "On Assumptions and Optimization\n\nWe have developed a pipeline based on three assumptions\nInstead of solving a 2×2 system of equations, we put together a system with more equations tham variables, ensuring that it cannot be solved, and used an optimizer to find a good enough solution\nThis approach gives stability in the face of the assumptions mostly (as opposed to completely) holding"
+    "text": "On Assumptions and Optimization\n\nInstead of solving a 2×2 system of equations, we put together a system with more equations than variables, ensuring that it cannot be solved, and used an optimizer to find a good enough solution\nThis approach gives stability in the face of the assumptions mostly (as opposed to completely) holding\nWe have assumed linear, inertial, motion. If this creates systematic error that makes all equation give wrong results, we are doomed and no optimization trick can save us\n\n\n\n\n\n\n\nNote\n\n\nMaybe the class can hypothesise about when this might happen?"
+  },
+  {
+    "objectID": "presentation/features.html#on-computational-efficiency",
+    "href": "presentation/features.html#on-computational-efficiency",
+    "title": "USV Pose Estimation and Depth Map Extraction",
+    "section": "On Computational Efficiency",
+    "text": "On Computational Efficiency\n\nIs it worth shaving off a few nanoseconds here and there at the expense of accuracy?is worth\nThe pipeline above gives the depth for one pixel; at 1024×768 and 1 FPS gaining 10nsec per frame is 0.8% of your CPU\nYour CPU is pretty weak, 10 nsec is conservative. Experiment to see the impact of each optimization.\nYour CPU has many jobs to execute. 0.8% of the CPU is not negligible, and 1FPS is too sparse\nRemember our assumptions and the linearization discussion? Being able to operate at higher framerates can have huge impact, a lot bigger than full, high-accuracy computations"
   },
   {
     "objectID": "presentation/features.html#outline-1",
     "href": "presentation/features.html#outline-1",
     "title": "USV Pose Estimation and Depth Map Extraction",
     "section": "Outline",
-    "text": "Outline\n\nWe have covered:\n\nRepresentations\nThe lens camera, stereoscopy\nOptical flow and pose estimation\n\nMoving on to:\n\nFurther relevant sensors: IMU, GPS\nSensor fusion\nAI-based methods: Neural networks for pose estimation.\n3D map construction."
+    "text": "Outline\n\nWe have covered:\n\nRepresentations\nThe lens camera, stereoscopy\nOptical flow and pose estimation\n\nMoving on to:\n\nFurther relevant sensors: IMU, GPS\nSensor fusion\n3D map construction."
   },
   {
     "objectID": "presentation/features.html#accelerometer-gyroscope-magnetometer",
     "href": "presentation/features.html#accelerometer-gyroscope-magnetometer",
     "title": "USV Pose Estimation and Depth Map Extraction",
     "section": "Accelerometer, Gyroscope, Magnetometer",
-    "text": "Accelerometer, Gyroscope, Magnetometer\no"
+    "text": "Accelerometer, Gyroscope, Magnetometer\nThe 9-DOF IMU:\n\nAccelerometer: 3D acceleration\nGyroscope: 3D angular velosity\nMagnetometer: 3D magnetic force field\n\nPitch, roll, and yaw and their rate of change are calculated from the 9-DOF IMU\n\n\n\n\n\n\nNote\n\n\nNote how all three sensors measure forces, which makes sense."
+  },
+  {
+    "objectID": "presentation/features.html#gps",
+    "href": "presentation/features.html#gps",
+    "title": "USV Pose Estimation and Depth Map Extraction",
+    "section": "GPS",
+    "text": "GPS\nThe GPS gives geolocation\n\nCan be converted to a metric space via a projection\nUse UTM Zone 35N, although Syros almost on the fence between 34N and 35N"
+  },
+  {
+    "objectID": "presentation/features.html#sensor-fusion",
+    "href": "presentation/features.html#sensor-fusion",
+    "title": "USV Pose Estimation and Depth Map Extraction",
+    "section": "Sensor Fusion",
+    "text": "Sensor Fusion\n\nGPS can have a few meters of error, but the error does not accumulate\nIMU starts out very accurate, but drifts over time\nOptical Flow accuracy can vary wildly; Optical Flow is differencial similarly to IMU, so its error accumulates.\nIt makes sense to fuse the different measurements in a way that exploits their respective strengths"
+  },
+  {
+    "objectID": "presentation/features.html#the-extended-kalman-filter-ekf",
+    "href": "presentation/features.html#the-extended-kalman-filter-ekf",
+    "title": "USV Pose Estimation and Depth Map Extraction",
+    "section": "The Extended Kalman Filter (EKF)",
+    "text": "The Extended Kalman Filter (EKF)\n\nAny aggregation function, (weighted) mean, max, min, can be considered fusion but the Kalman Filter excels in fusing a low-accuracy non-drifting measurement with a drifting measurement\nThe KF is only applicable to lieanr systems, the Extended Kalman Filter (EKF) is a linearization that extends the filter’s applicability to systems that can locally linearly approximated"
+  },
+  {
+    "objectID": "presentation/features.html#the-extended-kalman-filter-ekf-1",
+    "href": "presentation/features.html#the-extended-kalman-filter-ekf-1",
+    "title": "USV Pose Estimation and Depth Map Extraction",
+    "section": "The Extended Kalman Filter (EKF)",
+    "text": "The Extended Kalman Filter (EKF)\n(More than 17 slides dense with maths later)\nSo the key intuition is:\n\nThe filter keeps track of a system’s state (here, pose) under uncertainty\n\nas distributions, not as specific values\n\nThe filter receives multiple new observations (here, pose from different methods) that have independent error (do not err in the same direction)\nThe filter applies statistical and control theory wizardly to:\n\nbehave as a stabilizer by giving ‘inertia’ to the previous state\nbehave as a smoothener by maintaing a statistical representation of the values in the state vector"
+  },
+  {
+    "objectID": "presentation/features.html#optical-flowgps-vs.-gps-only",
+    "href": "presentation/features.html#optical-flowgps-vs.-gps-only",
+    "title": "USV Pose Estimation and Depth Map Extraction",
+    "section": "Optical Flow/GPS vs. GPS only",
+    "text": "Optical Flow/GPS vs. GPS only\n\n\nData from trials last April,\n\nIrregular framerate, around 1 FPS."
+  },
+  {
+    "objectID": "presentation/features.html#where-is-the-m-in-slam",
+    "href": "presentation/features.html#where-is-the-m-in-slam",
+    "title": "USV Pose Estimation and Depth Map Extraction",
+    "section": "Where is the M in SLAM?",
+    "text": "Where is the M in SLAM?\n\nWe have so far only discussed pose estimation. Where is the map?\nIn IMU/GPS localization there is no environmental observations, the vehicle is either geolocalized or localized wrt. its previous pose\nOptical flow has the advantage that localization is a by-product of depth estimation: the vehicle is localized wrt. objects in the environment\n\nNot only optical flow, but all range-finding sensors (lidar, radar)\nOptical flow is more interesting, because range information is not inherent to the sensor but takes some effort to extract"
+  },
+  {
+    "objectID": "presentation/features.html#constructing-the-map",
+    "href": "presentation/features.html#constructing-the-map",
+    "title": "USV Pose Estimation and Depth Map Extraction",
+    "section": "Constructing the map",
+    "text": "Constructing the map\n\nFor all range-finding localizers, the map is the point-cloud that is constructed by stitching together the depth images\nUsing the vehicle pose to rotate/translate them to a global origin\nA fully constructed map will make subsequent localization more accurate"
+  },
+  {
+    "objectID": "presentation/features.html#the-map",
+    "href": "presentation/features.html#the-map",
+    "title": "USV Pose Estimation and Depth Map Extraction",
+    "section": "The Map",
+    "text": "The Map\n\n\nInteractive map constructed from the April tests data"
   }
 ]
