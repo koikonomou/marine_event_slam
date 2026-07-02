@@ -1,2 +1,8 @@
 __pycache__/
 poetry.lock
+presentation/*.html
+presentation/*_files
+docs/
+**/*.quarto_ipynb
+/.quarto/
+

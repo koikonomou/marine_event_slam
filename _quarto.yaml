@@ -1,0 +1,30 @@
+project:
+  type: website
+  output-dir: docs
+  render:
+    - index.qmd
+    - presentation/
+
+website:
+  title: "USV SLAM"
+
+  navbar:
+    background: primary
+    left:
+      - text: "Home"
+        href: index.qmd
+      - text: "USV SLAM"
+        menu:
+          - href: presentation/lens_camera.qmd
+            text: Representations and Sensors
+          - href: presentation/features.qmd
+            text: Optical Flow and Similar
+
+format:
+  revealjs:
+    theme: dark
+    auto-play-media: true
+
+resources:
+  - presentation/map.glb
+
